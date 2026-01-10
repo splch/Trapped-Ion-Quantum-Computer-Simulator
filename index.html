@@ -1,0 +1,2819 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Trapped-Ion Quantum Computer Simulator (171Yb+) — Pulse-Level up to 16 Qubits</title>
+<style>
+  :root{
+    --bg:#0b0f14;
+    --panel:#121923;
+    --panel2:#0f1620;
+    --muted:#91a4b7;
+    --text:#e7eef7;
+    --accent:#7dd3fc;
+    --accent2:#a78bfa;
+    --good:#34d399;
+    --warn:#fbbf24;
+    --bad:#fb7185;
+    --border:rgba(255,255,255,.08);
+    --shadow:rgba(0,0,0,.35);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:var(--sans);
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 30% 10%, rgba(125,211,252,.12), transparent 60%),
+      radial-gradient(1000px 600px at 80% 40%, rgba(167,139,250,.10), transparent 55%),
+      radial-gradient(800px 500px at 20% 85%, rgba(52,211,153,.08), transparent 60%),
+      var(--bg);
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 16px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg, rgba(18,25,35,.92), rgba(18,25,35,.70));
+    backdrop-filter: blur(10px);
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  header .title{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  header h1{
+    font-size:16px;
+    margin:0;
+    letter-spacing:.3px;
+  }
+  header .subtitle{
+    font-size:12px;
+    color:var(--muted);
+  }
+  header .right{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .pill{
+    font-size:12px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:6px 10px;
+    background:rgba(15,22,32,.7);
+    color:var(--muted);
+    display:flex;
+    gap:8px;
+    align-items:center;
+    box-shadow: 0 10px 30px var(--shadow);
+  }
+  .pill strong{color:var(--text); font-weight:600}
+  .btn{
+    cursor:pointer;
+    border:1px solid var(--border);
+    background:rgba(15,22,32,.65);
+    color:var(--text);
+    padding:8px 10px;
+    border-radius:10px;
+    font-size:12px;
+    transition:.15s transform, .15s background, .15s border;
+    user-select:none;
+  }
+  .btn:hover{transform: translateY(-1px); border-color:rgba(125,211,252,.35); background:rgba(15,22,32,.8)}
+  .btn:active{transform: translateY(0px)}
+  .btn.primary{
+    background:linear-gradient(180deg, rgba(125,211,252,.25), rgba(15,22,32,.75));
+    border-color:rgba(125,211,252,.35);
+  }
+  .btn.danger{
+    background:linear-gradient(180deg, rgba(251,113,133,.20), rgba(15,22,32,.70));
+    border-color:rgba(251,113,133,.30);
+  }
+  .btn.good{
+    background:linear-gradient(180deg, rgba(52,211,153,.20), rgba(15,22,32,.70));
+    border-color:rgba(52,211,153,.28);
+  }
+  .btn.small{padding:6px 8px; font-size:11px; border-radius:9px}
+
+  #layout{
+    display:grid;
+    grid-template-columns: 330px 1fr 460px;
+    gap:12px;
+    padding:12px;
+    height: calc(100% - 70px);
+  }
+
+  .panel{
+    background:linear-gradient(180deg, rgba(18,25,35,.75), rgba(15,22,32,.70));
+    border:1px solid var(--border);
+    border-radius:14px;
+    box-shadow: 0 20px 50px var(--shadow);
+    overflow:hidden;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+  }
+  .panel header{
+    position:relative;
+    top:auto;
+    border:0;
+    border-bottom:1px solid var(--border);
+    padding:10px 12px;
+    background:linear-gradient(180deg, rgba(18,25,35,.85), rgba(18,25,35,.60));
+    z-index:0;
+  }
+  .panel header h2{
+    margin:0;
+    font-size:12px;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+    color:rgba(231,238,247,.92);
+  }
+  .panel .content{
+    padding:12px;
+    overflow:auto;
+    min-height:0;
+  }
+
+  .grid2{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+  }
+  .grid3{
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:10px;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin-bottom:10px;
+  }
+  .field label{
+    font-size:12px;
+    color:var(--muted);
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:baseline;
+  }
+  .field label .hint{
+    color:rgba(145,164,183,.75);
+    font-size:11px;
+    font-family:var(--mono);
+  }
+  input[type="number"], input[type="text"], select, textarea{
+    width:100%;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:rgba(10,14,20,.55);
+    color:var(--text);
+    outline:none;
+    font-family:var(--sans);
+    font-size:12px;
+  }
+  textarea{
+    resize:vertical;
+    min-height:92px;
+    font-family:var(--mono);
+    line-height:1.35;
+  }
+  input[type="range"]{
+    width:100%;
+  }
+  .row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .row.tight{gap:8px}
+  .row .spacer{flex:1}
+  .sep{
+    height:1px;
+    background:var(--border);
+    margin:12px 0;
+  }
+
+  .statusRow{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:rgba(10,14,20,.35);
+    margin-bottom:8px;
+  }
+  .statusRow .k{
+    font-size:12px;
+    color:var(--muted);
+  }
+  .statusRow .v{
+    font-family:var(--mono);
+    font-size:12px;
+  }
+  .badge{
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    color:var(--muted);
+  }
+  .badge.good{border-color:rgba(52,211,153,.35); color:rgba(52,211,153,.92)}
+  .badge.warn{border-color:rgba(251,191,36,.35); color:rgba(251,191,36,.92)}
+  .badge.bad{border-color:rgba(251,113,133,.35); color:rgba(251,113,133,.92)}
+
+  #visualPanel .content{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .canvasCard{
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:rgba(10,14,20,.35);
+    overflow:hidden;
+  }
+  canvas{
+    display:block;
+    width:100%;
+    height:100%;
+  }
+  .canvasHeader{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:8px 10px;
+    border-bottom:1px solid var(--border);
+    background:rgba(10,14,20,.28);
+  }
+  .canvasHeader .left{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .canvasHeader .left .t{
+    font-size:12px;
+    color:rgba(231,238,247,.92);
+  }
+  .canvasHeader .left .s{
+    font-size:11px;
+    color:var(--muted);
+    font-family:var(--mono);
+  }
+  .canvasHeader .right{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+
+  #log{
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:rgba(10,14,20,.30);
+    padding:10px;
+    font-family:var(--mono);
+    font-size:11px;
+    color:rgba(231,238,247,.92);
+    max-height:120px;
+    overflow:auto;
+    white-space:pre-wrap;
+    line-height:1.35;
+  }
+
+  table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 8px;
+  }
+  th{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:rgba(145,164,183,.85);
+    text-align:left;
+    padding:0 6px;
+  }
+  td{
+    padding:0 6px;
+    vertical-align:middle;
+  }
+  .pulseRow{
+    background:rgba(10,14,20,.30);
+    border:1px solid var(--border);
+    border-radius:12px;
+  }
+  .pulseRow td{
+    padding:8px 6px;
+  }
+  .pulseRow td:first-child{padding-left:10px}
+  .pulseRow td:last-child{padding-right:10px}
+  .mono{font-family:var(--mono)}
+  .small{font-size:11px; color:var(--muted)}
+  .tiny{font-size:10px; color:rgba(145,164,183,.78)}
+  .kpi{
+    display:flex;
+    gap:12px;
+    align-items:baseline;
+    flex-wrap:wrap;
+  }
+  .kpi .item{
+    border:1px solid var(--border);
+    background:rgba(10,14,20,.32);
+    border-radius:12px;
+    padding:8px 10px;
+    min-width:140px;
+  }
+  .kpi .item .k{
+    font-size:11px;
+    color:var(--muted);
+  }
+  .kpi .item .v{
+    font-family:var(--mono);
+    font-size:13px;
+    margin-top:4px;
+  }
+
+  .help{
+    font-size:11px;
+    color:rgba(145,164,183,.9);
+    line-height:1.35;
+  }
+  .help code{
+    font-family:var(--mono);
+    font-size:11px;
+    background:rgba(10,14,20,.45);
+    border:1px solid var(--border);
+    padding:1px 6px;
+    border-radius:9px;
+  }
+
+  .notice{
+    border:1px solid rgba(251,191,36,.25);
+    background:rgba(251,191,36,.10);
+    border-radius:12px;
+    padding:10px;
+    color:rgba(251,191,36,.95);
+    font-size:11px;
+    line-height:1.35;
+  }
+  .notice strong{color:rgba(251,191,36,1)}
+  .ok{
+    border:1px solid rgba(52,211,153,.25);
+    background:rgba(52,211,153,.09);
+    border-radius:12px;
+    padding:10px;
+    color:rgba(52,211,153,.95);
+    font-size:11px;
+    line-height:1.35;
+  }
+
+  #resultsPanel{
+    height: 270px;
+    padding:12px;
+    border-top:1px solid var(--border);
+    background:linear-gradient(180deg, rgba(15,22,32,.35), rgba(15,22,32,.15));
+  }
+  #resultsGrid{
+    display:grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap:12px;
+    height:100%;
+  }
+  .miniPanel{
+    height:100%;
+    background:rgba(10,14,20,.25);
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+  .miniPanel .head{
+    padding:8px 10px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    background:rgba(10,14,20,.20);
+  }
+  .miniPanel .head .t{font-size:12px}
+  .miniPanel .head .s{font-size:11px; color:var(--muted); font-family:var(--mono)}
+  .miniPanel .body{
+    padding:10px;
+    overflow:auto;
+    min-height:0;
+  }
+  .miniPanel .body canvas{
+    width:100%;
+    height:160px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:rgba(0,0,0,.15);
+  }
+
+  @media (max-width: 1200px){
+    #layout{grid-template-columns: 1fr; height:auto}
+    #resultsPanel{height:auto}
+    #resultsGrid{grid-template-columns: 1fr}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="title">
+    <h1>Trapped-Ion Quantum Computer Simulator — <span class="mono">¹⁷¹Yb⁺</span> (pulse-level, up to 16 ions)</h1>
+    <div class="subtitle">From UHV &amp; oven heating → photoionization → Doppler/sideband cooling → optical pumping → Raman/MS pulses → fluorescence readout</div>
+  </div>
+  <div class="right">
+    <div class="pill" title="Ground-state hyperfine clock transition (F=0,mF=0 ↔ F=1,mF=0)">
+      <span>ω<sub>hf</sub></span><strong class="mono" id="hfPill">12.642812118466 GHz</strong>
+    </div>
+    <div class="pill" title="Trap time (microseconds) in the simulator timeline">
+      <span>t</span><strong class="mono" id="timePill">0.0 µs</strong>
+    </div>
+    <button class="btn good" id="btnFull">Run Full Experiment</button>
+    <button class="btn danger" id="btnReset">Reset</button>
+  </div>
+</header>
+
+<main id="layout">
+  <!-- Hardware -->
+  <section class="panel" id="hardwarePanel">
+    <header><h2>Hardware &amp; Physics</h2></header>
+    <div class="content">
+      <div class="notice">
+        <strong>Reality check:</strong> this is a high-fidelity <em>educational</em> pulse-level simulator. It models the end-to-end lab workflow and implements
+        exact state-vector evolution (up to 16 qubits). Hardware physics (cooling, motional mode, scattering, detection) is parameterized with standard
+        trapped-ion models and typical experimental numbers — but it is not a substitute for a real control stack.
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="field">
+        <label>Number of trapped ions (qubits) <span class="hint">1–16</span></label>
+        <div class="row tight">
+          <input type="range" id="nQubits" min="1" max="16" value="2"/>
+          <span class="mono" id="nQubitsLabel">2</span>
+          <button class="btn small" id="applyN">Apply</button>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Magnetic field B₀ <span class="hint">G</span></label>
+          <input type="number" id="B0" value="5.0" step="0.1" min="0"/>
+        </div>
+        <div class="field">
+          <label>Base pressure target <span class="hint">Torr</span></label>
+          <input type="number" id="Ptarget" value="1e-11" step="1e-12"/>
+        </div>
+      </div>
+
+      <div class="grid3">
+        <div class="field">
+          <label>RF drive Ω<sub>rf</sub> <span class="hint">MHz</span></label>
+          <input type="number" id="rfMHz" value="35.0" step="0.5" min="1"/>
+        </div>
+        <div class="field">
+          <label>RF amplitude V<sub>pp</sub> <span class="hint">V</span></label>
+          <input type="number" id="rfVpp" value="250" step="10" min="0"/>
+        </div>
+        <div class="field">
+          <label>Axial ω<sub>z</sub> <span class="hint">MHz</span></label>
+          <input type="number" id="axMHz" value="0.6" step="0.05" min="0.05"/>
+        </div>
+      </div>
+
+      <div class="statusRow">
+        <div class="k">Vacuum</div>
+        <div class="v"><span id="Pnow" class="mono">1.0e-6</span> Torr</div>
+        <div class="badge" id="vacBadge">VENTED</div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btnPump">Pump Down</button>
+        <button class="btn" id="btnVent">Vent</button>
+        <div class="spacer"></div>
+        <div class="small mono">τ<sub>pump</sub> <span id="pumpTau">12 s</span></div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="statusRow">
+        <div class="k">Oven</div>
+        <div class="v"><span id="Tnow" class="mono">25</span> °C</div>
+        <div class="badge" id="ovenBadge">OFF</div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btnHeat">Heat Oven</button>
+        <button class="btn" id="btnCoolOven">Cool Oven</button>
+        <div class="spacer"></div>
+        <div class="small mono">T<sub>load</sub> <span id="Tset">450</span>°C</div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="statusRow">
+        <div class="k">Ion chain</div>
+        <div class="v"><span id="ionCount" class="mono">0</span> / <span id="ionTarget" class="mono">2</span> loaded</div>
+        <div class="badge" id="ionBadge">EMPTY</div>
+      </div>
+      <div class="field">
+        <label>Load target ions <span class="hint">(photoionization 399 nm + 369 nm)</span></label>
+        <div class="row tight">
+          <input type="range" id="ionTargetSlider" min="1" max="16" value="2"/>
+          <span class="mono" id="ionTargetLabel">2</span>
+          <button class="btn primary small" id="btnLoad">Load Ions</button>
+          <button class="btn small" id="btnUnload">Dump</button>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="statusRow">
+        <div class="k">Cooling</div>
+        <div class="v">T ≈ <span id="tempMk" class="mono">30000</span> mK · n̄ ≈ <span id="nbar" class="mono">5000</span></div>
+        <div class="badge" id="coolBadge">HOT</div>
+      </div>
+      <div class="grid2">
+        <button class="btn primary" id="btnDoppler">Doppler Cool</button>
+        <button class="btn primary" id="btnSideband">Sideband Cool</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn primary" id="btnPumpState">Optical Pump |0…0⟩</button>
+        <div class="spacer"></div>
+        <div class="small mono">η <span id="etaLabel">0.05</span> · dṅ/dt <span id="heatLabel">0.3</span> quanta/ms</div>
+      </div>
+      <div class="grid2" style="margin-top:10px;">
+        <div class="field">
+          <label>Lamb-Dicke η <span class="hint">(mode)</span></label>
+          <input type="number" id="eta" value="0.05" step="0.005" min="0.005" max="0.2"/>
+        </div>
+        <div class="field">
+          <label>Heating rate dṅ/dt <span class="hint">quanta/ms</span></label>
+          <input type="number" id="heatingRate" value="0.30" step="0.05" min="0"/>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="field">
+        <label>Playback speed <span class="hint">visual only</span></label>
+        <input type="range" id="speed" min="0.25" max="6" step="0.25" value="2"/>
+        <div class="row"><span class="small">slow</span><div class="spacer"></div><span class="small">fast</span><span class="mono" id="speedLabel">2×</span></div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="field">
+        <label>Noise model (optional)</label>
+        <div class="row tight">
+          <label class="small"><input type="checkbox" id="noiseOn"/> Enable stochastic noise</label>
+          <span class="small">(slower; runs per shot)</span>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="field">
+          <label>p<sub>1q</sub> depol <span class="hint">/ gate</span></label>
+          <input type="number" id="p1" value="0.0005" step="0.0001" min="0" max="0.2"/>
+        </div>
+        <div class="field">
+          <label>p<sub>2q</sub> depol <span class="hint">/ gate</span></label>
+          <input type="number" id="p2" value="0.005" step="0.001" min="0" max="0.5"/>
+        </div>
+        <div class="field">
+          <label>T₂ dephasing <span class="hint">ms</span></label>
+          <input type="number" id="T2" value="200" step="10" min="0.1"/>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="help">
+        <div><strong>Native operations:</strong> Raman carrier rotations <code>R(φ,θ)</code> and global entangling <code>XX(θ)</code> (Mølmer–Sørensen).</div>
+        <div>Use the Program panel to build pulse sequences or compile a small subset of OpenQASM.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Visualization -->
+  <section class="panel" id="visualPanel">
+    <header><h2>Trap View &amp; Dynamics</h2></header>
+    <div class="content">
+      <div class="canvasCard" style="height: 330px;">
+        <div class="canvasHeader">
+          <div class="left">
+            <div class="t">Linear RF trap &amp; ion chain</div>
+            <div class="s" id="trapSub">lasers: OFF · fluorescence: OFF</div>
+          </div>
+          <div class="right">
+            <button class="btn small" id="btnSnap">Snapshot</button>
+            <button class="btn small" id="btnClearLog">Clear Log</button>
+          </div>
+        </div>
+        <canvas id="trapCanvas"></canvas>
+      </div>
+
+      <div class="grid2" style="height: 220px;">
+        <div class="canvasCard">
+          <div class="canvasHeader">
+            <div class="left">
+              <div class="t">MS gate phase space</div>
+              <div class="s">α(t) loop closure</div>
+            </div>
+            <div class="right">
+              <span class="badge" id="msBadge">IDLE</span>
+            </div>
+          </div>
+          <canvas id="phaseCanvas"></canvas>
+        </div>
+        <div class="canvasCard">
+          <div class="canvasHeader">
+            <div class="left">
+              <div class="t">Bloch (selected ion)</div>
+              <div class="s">single-qubit reduced state</div>
+            </div>
+            <div class="right">
+              <select id="blochSelect"></select>
+            </div>
+          </div>
+          <canvas id="blochCanvas"></canvas>
+        </div>
+      </div>
+
+      <div id="log"></div>
+    </div>
+  </section>
+
+  <!-- Program -->
+  <section class="panel" id="programPanel">
+    <header><h2>Pulse Program &amp; Readout</h2></header>
+    <div class="content">
+      <div class="kpi">
+        <div class="item">
+          <div class="k">Prepared state</div>
+          <div class="v" id="prepState" title="Internal qubit register">—</div>
+        </div>
+        <div class="item">
+          <div class="k">Norm</div>
+          <div class="v" id="norm">1.000000</div>
+        </div>
+        <div class="item">
+          <div class="k">Top basis (p)</div>
+          <div class="v" id="topState">|00…0⟩</div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row">
+        <select id="preset">
+          <option value="bell">Preset: Bell (2 ions)</option>
+          <option value="ghz">Preset: GHZ (n ions)</option>
+          <option value="qft3">Preset: QFT (3 ions demo)</option>
+          <option value="dj3">Preset: Deutsch–Jozsa (3 ions demo)</option>
+          <option value="empty">Empty program</option>
+        </select>
+        <button class="btn" id="btnLoadPreset">Load</button>
+        <div class="spacer"></div>
+        <button class="btn primary" id="btnRun">Run Program</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row">
+        <select id="addType">
+          <option value="raman">Raman carrier R(φ,θ)</option>
+          <option value="vz">Virtual Z (frame update)</option>
+          <option value="ms">MS XX(θ) from (Ω,δ,η,τ)</option>
+          <option value="wait">Wait (idle)</option>
+        </select>
+        <button class="btn" id="btnAdd">Add pulse</button>
+        <button class="btn" id="btnExport">Export JSON</button>
+        <button class="btn" id="btnImport">Import JSON</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <table id="pulseTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>On</th>
+            <th>Type</th>
+            <th>Targets</th>
+            <th>Duration</th>
+            <th>Params</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="pulseBody"></tbody>
+      </table>
+
+      <div class="sep"></div>
+
+      <div class="field">
+        <label>OpenQASM (subset) → compile to pulses <span class="hint">rx/ry/rz, h, cx</span></label>
+        <textarea id="qasm" spellcheck="false">// Example:
+qreg q[2];
+h q[0];
+cx q[0],q[1];
+</textarea>
+        <div class="row">
+          <button class="btn" id="btnCompile">Compile QASM</button>
+          <span class="small">Compiled program overwrites current pulse list.</span>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Readout shots <span class="hint">N</span></label>
+          <input type="number" id="shots" value="200" step="50" min="1" max="20000"/>
+        </div>
+        <div class="field">
+          <label>Detection time <span class="hint">µs</span></label>
+          <input type="number" id="detTime" value="400" step="10" min="10" max="5000"/>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="field">
+          <label>Bright mean <span class="hint">counts</span></label>
+          <input type="number" id="muBright" value="25" step="1" min="1"/>
+        </div>
+        <div class="field">
+          <label>Dark mean <span class="hint">counts</span></label>
+          <input type="number" id="muDark" value="1.2" step="0.1" min="0"/>
+        </div>
+        <div class="field">
+          <label>Threshold <span class="hint">counts</span></label>
+          <input type="number" id="thresh" value="10" step="1" min="0"/>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" id="btnMeasure">Readout / Measure</button>
+        <div class="spacer"></div>
+        <span class="small mono" id="measSummary">—</span>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="ok">
+        <div><strong>Tip:</strong> For a textbook Bell state, load 2 ions, cool, pump, then run the Bell preset and measure.</div>
+        <div class="tiny" style="margin-top:6px;">This simulator tracks the motional mean phonon number n̄ and uses it (via a Debye–Waller-style factor) to reduce MS coupling when the ions are “hot”.</div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<section id="resultsPanel">
+  <div id="resultsGrid">
+    <div class="miniPanel">
+      <div class="head">
+        <div class="t">State amplitudes (top)</div>
+        <div class="s mono" id="ampInfo">—</div>
+      </div>
+      <div class="body">
+        <div id="ampList" class="mono" style="font-size:11px; line-height:1.45; white-space:pre;"></div>
+      </div>
+    </div>
+    <div class="miniPanel">
+      <div class="head">
+        <div class="t">Bitstring histogram</div>
+        <div class="s mono" id="histInfo">—</div>
+      </div>
+      <div class="body">
+        <canvas id="histCanvas"></canvas>
+      </div>
+    </div>
+    <div class="miniPanel">
+      <div class="head">
+        <div class="t">Photon counts (per ion)</div>
+        <div class="s mono" id="phInfo">—</div>
+      </div>
+      <div class="body">
+        <canvas id="photonCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ===========================================================
+   Trapped-Ion QC Simulator
+   =========================================================== */
+
+(function(){
+  "use strict";
+
+  // ---------- Small helpers ----------
+  const $ = (sel) => document.querySelector(sel);
+  const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+  const fmt = (x, sig=3) => {
+    if (!isFinite(x)) return "—";
+    const ax = Math.abs(x);
+    if (ax !== 0 && (ax < 1e-3 || ax >= 1e4)) return x.toExponential(sig);
+    return x.toFixed(sig);
+  };
+  const fmtSI = (x, unit="") => {
+    if (!isFinite(x)) return "—";
+    const ax = Math.abs(x);
+    if (ax >= 1e9) return (x/1e9).toFixed(3) + " G" + unit;
+    if (ax >= 1e6) return (x/1e6).toFixed(3) + " M" + unit;
+    if (ax >= 1e3) return (x/1e3).toFixed(3) + " k" + unit;
+    return x.toFixed(3) + " " + unit;
+  };
+
+  // Deterministic RNG (xorshift32) for reproducible runs if desired
+  let rngState = 0x12345678 >>> 0;
+  function rand(){
+    // returns [0,1)
+    rngState ^= (rngState << 13) >>> 0;
+    rngState ^= (rngState >>> 17) >>> 0;
+    rngState ^= (rngState << 5) >>> 0;
+    return (rngState >>> 0) / 4294967296;
+  }
+  function randn(){
+    // Box-Muller
+    let u = 0, v = 0;
+    while(u===0) u = rand();
+    while(v===0) v = rand();
+    return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+  }
+  function poisson(lambda){
+    if (lambda <= 0) return 0;
+    // Knuth for small-ish lambda; acceptable for lambda~25
+    const L = Math.exp(-lambda);
+    let k = 0;
+    let p = 1.0;
+    do{
+      k++;
+      p *= rand();
+    }while(p > L);
+    return k-1;
+  }
+
+  // ---------- Complex ops ----------
+  function cMul(ar, ai, br, bi){
+    return [ar*br - ai*bi, ar*bi + ai*br];
+  }
+  function cAdd(ar, ai, br, bi){ return [ar+br, ai+bi]; }
+  function cSub(ar, ai, br, bi){ return [ar-br, ai-bi]; }
+
+  // ---------- Statevector simulation ----------
+  class StateVector{
+    constructor(n){
+      this.setN(n);
+    }
+    setN(n){
+      this.n = n;
+      this.dim = 1 << n;
+      this.re = new Float64Array(this.dim);
+      this.im = new Float64Array(this.dim);
+      this.reset();
+    }
+    clone(){
+      const s = new StateVector(this.n);
+      s.re.set(this.re);
+      s.im.set(this.im);
+      return s;
+    }
+    reset(){
+      this.re.fill(0); this.im.fill(0);
+      this.re[0] = 1;
+    }
+    norm(){
+      let sum = 0;
+      for(let i=0;i<this.dim;i++){
+        const r=this.re[i], im=this.im[i];
+        sum += r*r + im*im;
+      }
+      return sum;
+    }
+    renorm(){
+      const nrm = Math.sqrt(this.norm());
+      if (nrm===0) return;
+      for(let i=0;i<this.dim;i++){ this.re[i]/=nrm; this.im[i]/=nrm; }
+    }
+    // apply 2x2 complex matrix on qubit q
+    apply1Q(q, u00r,u00i, u01r,u01i, u10r,u10i, u11r,u11i){
+      const step = 1 << q;
+      const jump = step << 1;
+      const dim = this.dim;
+      const re = this.re, im = this.im;
+      for(let base=0; base<dim; base+=jump){
+        for(let j=0;j<step;j++){
+          const i0 = base + j;
+          const i1 = i0 + step;
+          const a0r = re[i0], a0i = im[i0];
+          const a1r = re[i1], a1i = im[i1];
+          // b0 = u00*a0 + u01*a1
+          const b0r = (u00r*a0r - u00i*a0i) + (u01r*a1r - u01i*a1i);
+          const b0i = (u00r*a0i + u00i*a0r) + (u01r*a1i + u01i*a1r);
+          // b1 = u10*a0 + u11*a1
+          const b1r = (u10r*a0r - u10i*a0i) + (u11r*a1r - u11i*a1i);
+          const b1i = (u10r*a0i + u10i*a0r) + (u11r*a1i + u11i*a1r);
+          re[i0]=b0r; im[i0]=b0i;
+          re[i1]=b1r; im[i1]=b1i;
+        }
+      }
+    }
+    applyRz(q, lambda){
+      const step = 1 << q;
+      const jump = step << 1;
+      const dim = this.dim;
+      const re = this.re, im = this.im;
+      const a = -lambda/2, b = lambda/2;
+      const p0r = Math.cos(a), p0i = Math.sin(a);
+      const p1r = Math.cos(b), p1i = Math.sin(b);
+      for(let base=0; base<dim; base+=jump){
+        for(let j=0;j<step;j++){
+          const i0 = base + j;
+          const i1 = i0 + step;
+          const r0=re[i0], i0v=im[i0];
+          const r1=re[i1], i1v=im[i1];
+          // multiply by e^{-i lambda/2} for |0>, e^{+i lambda/2} for |1>
+          re[i0] = r0*p0r - i0v*p0i;
+          im[i0] = r0*p0i + i0v*p0r;
+          re[i1] = r1*p1r - i1v*p1i;
+          im[i1] = r1*p1i + i1v*p1r;
+        }
+      }
+    }
+    applyXX(q1,q2, theta){
+      if (q1===q2) return;
+      const dim = this.dim;
+      const re = this.re, im = this.im;
+      const b1 = 1<<q1, b2 = 1<<q2;
+      const mask = b1|b2;
+      const c = Math.cos(theta/2);
+      const s = Math.sin(theta/2);
+      // Iterate base indices where both target bits are 0
+      for(let base=0;base<dim;base++){
+        if ((base & mask) !== 0) continue;
+        const i00 = base;
+        const i01 = base | b2;
+        const i10 = base | b1;
+        const i11 = base | b1 | b2;
+
+        const a00r=re[i00], a00i=im[i00];
+        const a01r=re[i01], a01i=im[i01];
+        const a10r=re[i10], a10i=im[i10];
+        const a11r=re[i11], a11i=im[i11];
+
+        // -i*s * a : (s*a_i) + i*(-s*a_r)
+        // b00 = c*a00 + (-i s)*a11
+        const b00r = c*a00r + s*a11i;
+        const b00i = c*a00i - s*a11r;
+        // b11 = c*a11 + (-i s)*a00
+        const b11r = c*a11r + s*a00i;
+        const b11i = c*a11i - s*a00r;
+        // b01 = c*a01 + (-i s)*a10
+        const b01r = c*a01r + s*a10i;
+        const b01i = c*a01i - s*a10r;
+        // b10 = c*a10 + (-i s)*a01
+        const b10r = c*a10r + s*a01i;
+        const b10i = c*a10i - s*a01r;
+
+        re[i00]=b00r; im[i00]=b00i;
+        re[i11]=b11r; im[i11]=b11i;
+        re[i01]=b01r; im[i01]=b01i;
+        re[i10]=b10r; im[i10]=b10i;
+      }
+    }
+    measureOnce(){
+      // returns basis index sampled from probabilities
+      const dim=this.dim;
+      let r = rand();
+      let acc=0;
+      for(let i=0;i<dim;i++){
+        const p = this.re[i]*this.re[i] + this.im[i]*this.im[i];
+        acc += p;
+        if (r <= acc) return i;
+      }
+      return dim-1;
+    }
+    probabilities(){
+      const p = new Float64Array(this.dim);
+      for(let i=0;i<this.dim;i++){
+        const r=this.re[i], im=this.im[i];
+        p[i] = r*r + im*im;
+      }
+      return p;
+    }
+  }
+
+  // Bloch vector for qubit q from pure statevector
+  function blochFromState(state, q){
+    const n=state.n;
+    const dim=state.dim;
+    const step=1<<q;
+    const jump=step<<1;
+    let rho00=0, rho11=0;
+    let rho01r=0, rho01i=0;
+    const re=state.re, im=state.im;
+    for(let base=0;base<dim;base+=jump){
+      for(let j=0;j<step;j++){
+        const i0=base+j;
+        const i1=i0+step;
+        const a0r=re[i0], a0i=im[i0];
+        const a1r=re[i1], a1i=im[i1];
+        rho00 += a0r*a0r + a0i*a0i;
+        rho11 += a1r*a1r + a1i*a1i;
+        // a0 * conj(a1)
+        rho01r += a0r*a1r + a0i*a1i;
+        rho01i += a0i*a1r - a0r*a1i;
+      }
+    }
+    const x = 2*rho01r;
+    const y = 2*rho01i;
+    const z = rho00 - rho11;
+    return {x,y,z, rho00, rho11};
+  }
+
+  // ---------- Pulse models ----------
+  // Raman carrier: U = cos(θ/2) I - i sin(θ/2) (cosφ X + sinφ Y)
+  function applyRaman(state, q, theta, phi){
+    const c = Math.cos(theta/2);
+    const s = Math.sin(theta/2);
+    // off-diagonal: -i s e^{-i phi} and -i s e^{+i phi}
+    const epr = Math.cos(phi), epi = Math.sin(phi);
+    // e^{-i phi} = cos(phi) - i sin(phi) => (epr, -epi)
+    // u01 = -i s e^{-i phi}
+    // Multiply e^{-i phi} by -i s:
+    // (-i s)(epr - i epi) = (-i s epr) + (-i s)(-i epi)= (-i s epr) + (-i * -i) s epi = (-i s epr) + (-1) s epi? wait (-i)*(-i)= -1.
+    // So = - s epi  + i(-s epr)
+    const u01r = -s*epi;
+    const u01i = -s*epr;
+    // u10 = -i s e^{+i phi} where e^{+i phi} = epr + i epi
+    // (-i s)(epr + i epi) = (-i s epr) + (-i s)(i epi) = (-i s epr) + (-i*i) s epi = (-i s epr) + (1) s epi
+    // = s epi + i(-s epr)
+    const u10r = s*epi;
+    const u10i = -s*epr;
+    state.apply1Q(q,
+      c,0,
+      u01r,u01i,
+      u10r,u10i,
+      c,0
+    );
+  }
+
+  // Hadamard compiled as: H = Ry(π/2) · Rz(π) (rightmost first)
+  function applyHadamard(state,q){
+    state.applyRz(q, Math.PI);
+    // Ry(π/2) is Raman with phi=+π/2, theta=π/2
+    applyRaman(state,q, Math.PI/2, Math.PI/2);
+  }
+
+  // CNOT decomposition using XX(π/2) and local H, Rz(-π/2):
+  // 1) H on control
+  // 2) XX(π/2) on (c,t)
+  // 3) H on both
+  // 4) Rz(-π/2) on both
+  // 5) H on target
+  function applyCNOT_via_XX(state, c, t){
+    applyHadamard(state, c);
+    state.applyXX(c,t, Math.PI/2);
+    applyHadamard(state, c);
+    applyHadamard(state, t);
+    state.applyRz(c, -Math.PI/2);
+    state.applyRz(t, -Math.PI/2);
+    applyHadamard(state, t);
+  }
+
+  // ---------- Hardware & process model ----------
+  const CONST = {
+    // hyperfine splitting (Hz) for 171Yb+ "clock" transition used as qubit
+    hf_Hz: 12_642_812_118_466, // 12.642812118466 GHz (typical quoted value)
+    // cooling transition nominal wavelength (nm, vacuum)
+    lambda_cool_nm: 369.526,
+    lambda_ionize_nm: 398.91,
+    lambda_repump_nm: 935.188,
+    lambda_clearout_nm: 638.61,
+    linewidth_Hz: 19.6e6 * 2*Math.PI, // Γ (rad/s) from Γ/2π=19.6 MHz
+    // Doppler limit (approx) T_D = ħ Γ / (2 k_B)
+    kB: 1.380649e-23,
+    hbar: 1.054571817e-34
+  };
+  function dopplerLimit_mK(){
+    const TD = (CONST.hbar * (19.6e6*2*Math.PI)) / (2*CONST.kB); // K
+    return TD*1e3;
+  }
+
+  const sim = {
+    n: 2,
+    state: new StateVector(2),
+    prepared: false,
+    stage: "IDLE",
+    time_us: 0,
+    hardware: {
+      pressureTorr: 1e-6,
+      pressureTarget: 1e-11,
+      pumping: false,
+      pumpTau_s: 12.0,
+      ovenTempC: 25,
+      ovenTargetC: 450,
+      heating: false,
+      heatTau_s: 10.0,
+      ionsLoaded: 0,
+      ionsTarget: 2,
+      loading: false,
+      dump: false,
+      temp_mK: 30000,
+      nbar: 5000,
+      doppler: false,
+      sideband: false,
+      pumpingSpin: false,
+      lasers: {
+        L399: false,
+        L369: false,
+        L935: false,
+        L638: false,
+        Raman355: false,
+        detect369: false
+      },
+      B0_G: 5.0,
+      rfMHz: 35.0,
+      rfVpp: 250,
+      axMHz: 0.6,
+      eta: 0.05,
+      heatingRate: 0.30, // quanta/ms
+    },
+    playbackSpeed: 2.0,
+    noise: {
+      enabled: false,
+      p1: 0.0005,
+      p2: 0.005,
+      T2_ms: 200.0
+    },
+    msViz: {
+      active: false,
+      points: [],
+      lastParams: null
+    },
+    ui: {
+      snapshotCount: 0
+    },
+    lastMeasurement: null
+  };
+
+  // ---------- Logging ----------
+  function log(msg){
+    const el=$("#log");
+    const t = (sim.time_us).toFixed(1).padStart(8," ");
+    el.textContent += `[${t} µs] ${msg}\n`;
+    el.scrollTop = el.scrollHeight;
+  }
+  function clearLog(){ $("#log").textContent=""; }
+
+  // ---------- Ion chain positions (simple energy minimization) ----------
+  function computeChainPositions(N){
+    if (N<=0) return [];
+    if (N===1) return [0];
+    // initialize evenly spaced
+    let z = new Array(N).fill(0).map((_,i)=> (i-(N-1)/2)*1.2);
+    const k = 0.18; // axial confinement scale (arbitrary units)
+    const lr = 0.06; // learning rate
+    for(let iter=0; iter<260; iter++){
+      const grad = new Array(N).fill(0);
+      for(let i=0;i<N;i++){
+        grad[i] += k*z[i];
+        for(let j=0;j<N;j++){
+          if (i===j) continue;
+          const dz = z[i]-z[j];
+          const adz = Math.abs(dz) + 1e-6;
+          grad[i] += (dz/adz) / (adz*adz);
+        }
+      }
+      for(let i=0;i<N;i++){
+        z[i] -= lr*grad[i];
+      }
+      // recenter
+      const mean = z.reduce((a,b)=>a+b,0)/N;
+      for(let i=0;i<N;i++) z[i]-=mean;
+      // lightly damp
+      if (iter%40===0) { /* noop */ }
+    }
+    // normalize span to [-1,1]
+    const span = Math.max(...z)-Math.min(...z);
+    const scale = span>0 ? 2/span : 1;
+    z = z.map(v=>v*scale);
+    return z;
+  }
+
+  // ---------- Visualization ----------
+  const trapCanvas = $("#trapCanvas");
+  const phaseCanvas = $("#phaseCanvas");
+  const blochCanvas = $("#blochCanvas");
+  const histCanvas = $("#histCanvas");
+  const photonCanvas = $("#photonCanvas");
+
+  function resizeCanvasToDisplaySize(canvas){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(1, Math.floor(rect.width * dpr));
+    const h = Math.max(1, Math.floor(rect.height * dpr));
+    if(canvas.width !== w || canvas.height !== h){
+      canvas.width = w;
+      canvas.height = h;
+    }
+  }
+
+  function drawTrap(){
+    resizeCanvasToDisplaySize(trapCanvas);
+    const ctx = trapCanvas.getContext("2d");
+    const w = trapCanvas.width, h = trapCanvas.height;
+
+    // background
+    ctx.clearRect(0,0,w,h);
+    const g = ctx.createRadialGradient(w*0.35,h*0.3, 10, w*0.5,h*0.5, Math.max(w,h));
+    g.addColorStop(0, "rgba(125,211,252,0.12)");
+    g.addColorStop(0.5,"rgba(15,22,32,0.0)");
+    g.addColorStop(1,"rgba(0,0,0,0.0)");
+    ctx.fillStyle = "rgba(10,14,20,0.8)";
+    ctx.fillRect(0,0,w,h);
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+
+    // trap rails (stylized)
+    ctx.save();
+    ctx.translate(0,h*0.52);
+    const railY = 0;
+    const railH = h*0.18;
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fillRect(w*0.06, -railH, w*0.88, railH*0.55);
+    ctx.fillRect(w*0.06, railH*0.45, w*0.88, railH*0.55);
+    // central slot
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(w*0.46, -railH, w*0.08, railH*2);
+    ctx.restore();
+
+    // overlay: lasers
+    const L = sim.hardware.lasers;
+    const lasersOn = [];
+    if (L.L399) lasersOn.push({name:"399", color:"rgba(180,255,120,0.55)"});
+    if (L.L369) lasersOn.push({name:"369", color:"rgba(120,200,255,0.55)"});
+    if (L.L935) lasersOn.push({name:"935", color:"rgba(255,180,120,0.35)"});
+    if (L.Raman355) lasersOn.push({name:"355", color:"rgba(180,140,255,0.50)"});
+    if (L.detect369) lasersOn.push({name:"det369", color:"rgba(120,200,255,0.65)"});
+
+    const chain = computeChainPositions(sim.hardware.ionsLoaded);
+    const jitter = Math.sqrt(sim.hardware.temp_mK/30000) * 6; // px
+    const y0 = h*0.52;
+    // beams cross the trap center
+    for(let i=0;i<lasersOn.length;i++){
+      const c = lasersOn[i].color;
+      ctx.strokeStyle = c;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      const a = (-0.45 + i*0.22);
+      const x1 = w*0.05, y1 = h*0.25 + i*8;
+      const x2 = w*0.95, y2 = h*0.75 - i*8;
+      // rotate slightly by a
+      const cx = w*0.5, cy = y0;
+      const dx1 = x1-cx, dy1 = y1-cy;
+      const dx2 = x2-cx, dy2 = y2-cy;
+      const ca=Math.cos(a), sa=Math.sin(a);
+      const rx1 = cx + dx1*ca - dy1*sa;
+      const ry1 = cy + dx1*sa + dy1*ca;
+      const rx2 = cx + dx2*ca - dy2*sa;
+      const ry2 = cy + dx2*sa + dy2*ca;
+      ctx.moveTo(rx1,ry1);
+      ctx.lineTo(rx2,ry2);
+      ctx.stroke();
+    }
+
+    // ions
+    for(let i=0;i<chain.length;i++){
+      const x = w*0.5 + chain[i]*w*0.33 + randn()*jitter*0.25;
+      const y = y0 + randn()*jitter*0.15;
+      // shadow
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.arc(x+4,y+7, 10, 0, Math.PI*2);
+      ctx.fill();
+      // glow
+      const bright = (L.detect369 && sim.lastMeasurement && sim.lastMeasurement.lastBits && sim.lastMeasurement.lastBits[i]===1);
+      const glow = bright ? "rgba(125,211,252,0.65)" : "rgba(255,255,255,0.18)";
+      const r = bright ? 9 : 7.5;
+      const gg = ctx.createRadialGradient(x,y, 0, x,y, r*3);
+      gg.addColorStop(0, glow);
+      gg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = gg;
+      ctx.beginPath();
+      ctx.arc(x,y, r*3, 0, Math.PI*2);
+      ctx.fill();
+      // core
+      ctx.fillStyle = bright ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.75)";
+      ctx.beginPath();
+      ctx.arc(x,y, r, 0, Math.PI*2);
+      ctx.fill();
+      // index label
+      ctx.fillStyle = "rgba(145,164,183,0.85)";
+      ctx.font = `${Math.floor(11*(window.devicePixelRatio||1))}px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.textAlign = "center";
+      ctx.fillText(`${i}`, x, y + r + 14);
+    }
+
+    // Stage annotation
+    ctx.fillStyle = "rgba(231,238,247,0.90)";
+    ctx.font = `${Math.floor(12*(window.devicePixelRatio||1))}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.textAlign = "left";
+    ctx.fillText(`Stage: ${sim.stage}`, 12*(window.devicePixelRatio||1), 18*(window.devicePixelRatio||1));
+  }
+
+  function drawPhaseSpace(){
+    resizeCanvasToDisplaySize(phaseCanvas);
+    const ctx = phaseCanvas.getContext("2d");
+    const w=phaseCanvas.width, h=phaseCanvas.height;
+    ctx.clearRect(0,0,w,h);
+    // background
+    ctx.fillStyle="rgba(0,0,0,0.15)";
+    ctx.fillRect(0,0,w,h);
+
+    // axes
+    ctx.strokeStyle="rgba(145,164,183,0.25)";
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(w*0.5, h*0.1);
+    ctx.lineTo(w*0.5, h*0.9);
+    ctx.moveTo(w*0.1, h*0.5);
+    ctx.lineTo(w*0.9, h*0.5);
+    ctx.stroke();
+
+    // loop points
+    const pts = sim.msViz.points;
+    if (pts.length>1){
+      ctx.strokeStyle="rgba(167,139,250,0.75)";
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      for(let i=0;i<pts.length;i++){
+        const p=pts[i];
+        const x=w*0.5 + p.x*w*0.35;
+        const y=h*0.5 - p.y*h*0.35;
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      // current point
+      const p=pts[pts.length-1];
+      const x=w*0.5 + p.x*w*0.35;
+      const y=h*0.5 - p.y*h*0.35;
+      ctx.fillStyle="rgba(125,211,252,0.9)";
+      ctx.beginPath(); ctx.arc(x,y, 5, 0, Math.PI*2); ctx.fill();
+    } else {
+      // idle text
+      ctx.fillStyle="rgba(145,164,183,0.65)";
+      ctx.font = `${Math.floor(12*(window.devicePixelRatio||1))}px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.textAlign="center";
+      ctx.fillText("Run an MS pulse to see α(t) trajectory", w/2, h/2);
+    }
+  }
+
+  function drawBloch(){
+    resizeCanvasToDisplaySize(blochCanvas);
+    const ctx = blochCanvas.getContext("2d");
+    const w=blochCanvas.width, h=blochCanvas.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle="rgba(0,0,0,0.15)";
+    ctx.fillRect(0,0,w,h);
+
+    const q = parseInt($("#blochSelect").value || "0",10);
+    if (sim.hardware.ionsLoaded===0){
+      ctx.fillStyle="rgba(145,164,183,0.65)";
+      ctx.font = `${Math.floor(12*(window.devicePixelRatio||1))}px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.textAlign="center";
+      ctx.fillText("No ions loaded", w/2, h/2);
+      return;
+    }
+    const b = blochFromState(sim.state, q);
+    const r = Math.min(w,h)*0.32;
+    const cx=w*0.5, cy=h*0.52;
+
+    // sphere outline
+    ctx.strokeStyle="rgba(145,164,183,0.35)";
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+
+    // equator
+    ctx.strokeStyle="rgba(145,164,183,0.20)";
+    ctx.beginPath(); ctx.ellipse(cx,cy,r, r*0.35, 0, 0, Math.PI*2); ctx.stroke();
+
+    // axes labels
+    ctx.fillStyle="rgba(145,164,183,0.65)";
+    ctx.font = `${Math.floor(11*(window.devicePixelRatio||1))}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.textAlign="center";
+    ctx.fillText("|0⟩", cx, cy - r - 8);
+    ctx.fillText("|1⟩", cx, cy + r + 14);
+
+    // bloch vector projection
+    const vx = b.x, vy = b.y, vz = b.z;
+    // simple 3D to 2D (isometric-ish)
+    const px = cx + r*0.9*(vx*0.85 + vy*0.15);
+    const py = cy - r*0.9*(vz*0.95) - r*0.25*(vy*0.75 - vx*0.15);
+
+    ctx.strokeStyle="rgba(125,211,252,0.9)";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(px,py);
+    ctx.stroke();
+
+    ctx.fillStyle="rgba(125,211,252,0.95)";
+    ctx.beginPath(); ctx.arc(px,py, 6, 0, Math.PI*2); ctx.fill();
+
+    // text
+    ctx.fillStyle="rgba(231,238,247,0.90)";
+    ctx.font = `${Math.floor(11*(window.devicePixelRatio||1))}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.textAlign="left";
+    ctx.fillText(`x=${fmt(vx,3)}  y=${fmt(vy,3)}  z=${fmt(vz,3)}`, 10*(window.devicePixelRatio||1), 18*(window.devicePixelRatio||1));
+  }
+
+  // ---------- Histogram drawing ----------
+  function drawHistogram(canvas, labels, values, opts={}){
+    resizeCanvasToDisplaySize(canvas);
+    const ctx = canvas.getContext("2d");
+    const w=canvas.width, h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle="rgba(0,0,0,0.12)";
+    ctx.fillRect(0,0,w,h);
+
+    const padL=44*(window.devicePixelRatio||1);
+    const padR=12*(window.devicePixelRatio||1);
+    const padT=12*(window.devicePixelRatio||1);
+    const padB=26*(window.devicePixelRatio||1);
+
+    const maxV = Math.max(1e-9, ...values);
+    const n = values.length;
+    const barW = (w - padL - padR) / Math.max(1, n);
+    // axes
+    ctx.strokeStyle="rgba(145,164,183,0.22)";
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT);
+    ctx.lineTo(padL, h-padB);
+    ctx.lineTo(w-padR, h-padB);
+    ctx.stroke();
+
+    // y ticks
+    ctx.fillStyle="rgba(145,164,183,0.60)";
+    ctx.font = `${Math.floor(10*(window.devicePixelRatio||1))}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.textAlign="right";
+    ctx.textBaseline="middle";
+    for(let t=0;t<=4;t++){
+      const y = padT + (h-padB-padT)*(t/4);
+      const v = maxV*(1 - t/4);
+      ctx.fillText(`${Math.round(v)}`, padL-6, y);
+      ctx.strokeStyle="rgba(145,164,183,0.12)";
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(w-padR, y);
+      ctx.stroke();
+    }
+
+    // bars
+    for(let i=0;i<n;i++){
+      const v = values[i];
+      const bh = (h-padB-padT) * (v/maxV);
+      const x = padL + i*barW + barW*0.10;
+      const y = (h-padB) - bh;
+      const bw = barW*0.80;
+
+      ctx.fillStyle = "rgba(125,211,252,0.55)";
+      ctx.fillRect(x,y,bw,bh);
+
+      // label
+      ctx.save();
+      ctx.translate(x + bw/2, h - padB + 12*(window.devicePixelRatio||1));
+      ctx.rotate(-Math.PI/6);
+      ctx.fillStyle="rgba(145,164,183,0.75)";
+      ctx.font = `${Math.floor(10*(window.devicePixelRatio||1))}px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.fillText(labels[i], 0, 0);
+      ctx.restore();
+    }
+  }
+
+  // ---------- UI: pulse list ----------
+  function defaultPulse(type){
+    if(type==="raman"){
+      return {on:true, type:"raman", targets:"0", duration_us:2.5, omega_kHz:100, phase_rad:0, label:"Raman"};
+    }
+    if(type==="vz"){
+      return {on:true, type:"vz", targets:"0", duration_us:0, lambda_rad:Math.PI/2, label:"Virtual Z"};
+    }
+    if(type==="ms"){
+      return {on:true, type:"ms", targets:"0,1", duration_us:100, detuning_kHz:10, omega_kHz:70, phase_rad:0, autoClose:true, calibrate:false, label:"MS"};
+    }
+    if(type==="wait"){
+      return {on:true, type:"wait", targets:"", duration_us:10, label:"Idle"};
+    }
+    return {on:true, type:"wait", targets:"", duration_us:10, label:""};
+  }
+
+  let pulses = [];
+
+  function renderPulseTable(){
+    const body = $("#pulseBody");
+    body.innerHTML = "";
+    pulses.forEach((p, idx)=>{
+      const tr = document.createElement("tr");
+      tr.className="pulseRow";
+
+      const tdIdx = document.createElement("td");
+      tdIdx.innerHTML = `<span class="mono">${idx+1}</span>`;
+      tr.appendChild(tdIdx);
+
+      const tdOn = document.createElement("td");
+      tdOn.innerHTML = `<input type="checkbox" ${p.on?"checked":""} data-i="${idx}" data-k="on">`;
+      tr.appendChild(tdOn);
+
+      const tdType = document.createElement("td");
+      const sel = document.createElement("select");
+      ["raman","vz","ms","wait"].forEach(t=>{
+        const o=document.createElement("option");
+        o.value=t; o.textContent = (t==="raman"?"Raman":t==="vz"?"vZ":t==="ms"?"MS":"Wait");
+        if (p.type===t) o.selected=true;
+        sel.appendChild(o);
+      });
+      sel.dataset.i=idx; sel.dataset.k="type";
+      sel.addEventListener("change", (e)=>{
+        const i=parseInt(e.target.dataset.i,10);
+        const t=e.target.value;
+        const keepOn = pulses[i].on;
+        const old = pulses[i];
+        const np = defaultPulse(t);
+        np.on = keepOn;
+        // Try to keep targets where it makes sense
+        np.targets = old.targets || np.targets;
+        // Keep duration for waits
+        if (t==="wait") np.duration_us = old.duration_us || np.duration_us;
+        pulses[i]=np;
+        renderPulseTable();
+      });
+      tdType.appendChild(sel);
+      tr.appendChild(tdType);
+
+      const tdTargets = document.createElement("td");
+      const targets = document.createElement("input");
+      targets.type="text";
+      targets.value = p.targets || "";
+      targets.placeholder = p.type==="ms"?"0,1":"0";
+      targets.dataset.i=idx; targets.dataset.k="targets";
+      targets.addEventListener("input", onPulseInput);
+      tdTargets.appendChild(targets);
+      tr.appendChild(tdTargets);
+
+      const tdDur = document.createElement("td");
+      const dur = document.createElement("input");
+      dur.type="number";
+      dur.step="0.1";
+      dur.value = p.duration_us ?? 0;
+      dur.min="0";
+      dur.dataset.i=idx; dur.dataset.k="duration_us";
+      dur.addEventListener("input", onPulseInput);
+      tdDur.appendChild(dur);
+      tdDur.appendChild(document.createElement("div")).innerHTML = `<div class="tiny">µs</div>`;
+      tr.appendChild(tdDur);
+
+      const tdParams = document.createElement("td");
+      tdParams.appendChild(renderParamsEditor(p, idx));
+      tr.appendChild(tdParams);
+
+      const tdBtns = document.createElement("td");
+      tdBtns.innerHTML = `
+        <div class="row tight">
+          <button class="btn small" data-act="up" data-i="${idx}">↑</button>
+          <button class="btn small" data-act="down" data-i="${idx}">↓</button>
+          <button class="btn small danger" data-act="del" data-i="${idx}">✕</button>
+        </div>`;
+      tdBtns.querySelectorAll("button").forEach(b=>{
+        b.addEventListener("click", (e)=>{
+          const i=parseInt(e.target.dataset.i,10);
+          const act=e.target.dataset.act;
+          if(act==="del"){ pulses.splice(i,1); renderPulseTable(); return; }
+          if(act==="up" && i>0){ const tmp=pulses[i-1]; pulses[i-1]=pulses[i]; pulses[i]=tmp; renderPulseTable(); return; }
+          if(act==="down" && i<pulses.length-1){ const tmp=pulses[i+1]; pulses[i+1]=pulses[i]; pulses[i]=tmp; renderPulseTable(); return; }
+        });
+      });
+      tr.appendChild(tdBtns);
+
+      body.appendChild(tr);
+    });
+
+    // attach checkbox changes
+    body.querySelectorAll("input[type='checkbox']").forEach(cb=>{
+      cb.addEventListener("change", (e)=>{
+        const i=parseInt(e.target.dataset.i,10);
+        const k=e.target.dataset.k;
+        pulses[i][k]=e.target.checked;
+      });
+    });
+
+    updateStateSummary();
+  }
+
+  function onPulseInput(e){
+    const i=parseInt(e.target.dataset.i,10);
+    const k=e.target.dataset.k;
+    const v = e.target.type==="number" ? parseFloat(e.target.value) : e.target.value;
+    pulses[i][k]=v;
+    if (k==="targets") pulses[i][k]=String(v);
+    if (k==="duration_us") pulses[i][k]=Math.max(0, pulses[i][k]);
+    // if autoClose on MS, update duration
+    if (pulses[i].type==="ms" && pulses[i].autoClose){
+      const d = parseFloat(pulses[i].detuning_kHz || 10);
+      if (d>0) pulses[i].duration_us = 1000/d; // µs, since 1/δ (kHz) = ms
+      // keep input in sync by rerender
+      renderPulseTable();
+    }
+  }
+
+  function renderParamsEditor(p, idx){
+    const wrap = document.createElement("div");
+    wrap.style.display="flex";
+    wrap.style.flexDirection="column";
+    wrap.style.gap="6px";
+    wrap.style.minWidth="170px";
+
+    function addLine(html){
+      const d=document.createElement("div");
+      d.className="tiny mono";
+      d.innerHTML = html;
+      wrap.appendChild(d);
+    }
+
+    if (p.type==="raman"){
+      wrap.appendChild(makeInlineNumber(idx,"omega_kHz","Ω (kHz)", p.omega_kHz, 0, 1e6, 1));
+      wrap.appendChild(makeInlineNumber(idx,"phase_rad","φ (rad)", p.phase_rad, -100, 100, 0.01));
+      addLine("θ = 2π·Ω·τ");
+    } else if (p.type==="vz"){
+      wrap.appendChild(makeInlineNumber(idx,"lambda_rad","λ (rad)", p.lambda_rad, -100, 100, 0.01));
+      addLine("Rz(λ) frame update");
+    } else if (p.type==="ms"){
+      wrap.appendChild(makeInlineNumber(idx,"detuning_kHz","δ (kHz)", p.detuning_kHz, 0.1, 1e6, 0.5));
+      wrap.appendChild(makeInlineNumber(idx,"omega_kHz","Ω (kHz)", p.omega_kHz, 0, 1e6, 1));
+      wrap.appendChild(makeInlineNumber(idx,"phase_rad","ψ (rad)", p.phase_rad, -100, 100, 0.01));
+      const ac = document.createElement("label");
+      ac.className="small";
+      ac.innerHTML = `<input type="checkbox" ${p.autoClose?"checked":""} data-i="${idx}" data-k="autoClose"/> auto-close loop (τ=1/δ)`;
+      ac.querySelector("input").addEventListener("change",(e)=>{
+        const i=parseInt(e.target.dataset.i,10);
+        pulses[i].autoClose = e.target.checked;
+        if (pulses[i].autoClose){
+          const d = parseFloat(pulses[i].detuning_kHz || 10);
+          if (d>0) pulses[i].duration_us = 1000/d;
+        }
+        renderPulseTable();
+      });
+      wrap.appendChild(ac);
+
+      const calBtn = document.createElement("button");
+      calBtn.className="btn small";
+      calBtn.textContent = "Calibrate Ω → XX(π/2)";
+      calBtn.addEventListener("click", ()=>{
+        const i=idx;
+        const d_kHz = Math.max(0.1, parseFloat(pulses[i].detuning_kHz||10));
+        if (pulses[i].autoClose) pulses[i].duration_us = 1000/d_kHz;
+        const tau = (pulses[i].duration_us||100) * 1e-6;
+        const eta = sim.hardware.eta;
+        const nbar = sim.hardware.nbar;
+        const DW = Math.exp(-0.5*eta*eta*(2*nbar+1));
+        const delta = 2*Math.PI*d_kHz*1e3;
+        // We want theta = π/2, with theta = 2*chi, chi ≈ (Ω^2 η^2 / δ) * (tau - sin δ tau / δ)
+        const A = (tau - Math.sin(delta*tau)/delta);
+        const chiTarget = Math.PI/4;
+        const OmegaEff = Math.sqrt(Math.max(0, chiTarget * delta / (eta*eta * A)));
+        const Omega = OmegaEff / Math.max(1e-9, DW);
+        const Omega_kHz = Omega / (2*Math.PI*1e3);
+        pulses[i].omega_kHz = Omega_kHz;
+        renderPulseTable();
+        log(`Calibrated MS Ω ≈ ${Omega_kHz.toFixed(1)} kHz for XX(π/2) with η=${eta.toFixed(3)}, n̄=${nbar.toFixed(2)}, δ=${d_kHz.toFixed(1)} kHz.`);
+      });
+      wrap.appendChild(calBtn);
+
+      addLine("Uses χ(τ) ~ Ω²η²/δ · (τ - sin(δτ)/δ)");
+    } else if (p.type==="wait"){
+      addLine("Idle: heating + dephasing");
+    }
+
+    return wrap;
+  }
+
+  function makeInlineNumber(i, key, label, val, min, max, step){
+    const row = document.createElement("div");
+    row.style.display="grid";
+    row.style.gridTemplateColumns="1fr 1fr";
+    row.style.gap="6px";
+    const lab = document.createElement("div");
+    lab.className="tiny";
+    lab.textContent = label;
+    const inp = document.createElement("input");
+    inp.type="number";
+    inp.value = (val ?? 0);
+    inp.step = step ?? 0.1;
+    if (min!=null) inp.min = String(min);
+    if (max!=null) inp.max = String(max);
+    inp.dataset.i=i;
+    inp.dataset.k=key;
+    inp.addEventListener("input", onPulseInput);
+    row.appendChild(lab);
+    row.appendChild(inp);
+    return row;
+  }
+
+  // ---------- Program execution ----------
+  function parseTargets(str){
+    if (!str) return [];
+    return str.split(",").map(s=>s.trim()).filter(Boolean).map(s=>parseInt(s,10)).filter(x=>Number.isFinite(x));
+  }
+
+  function applyNoiseAfter1Q(state, q){
+    const p = sim.noise.p1;
+    if (p<=0) return;
+    if (rand() > p) return;
+    // apply random Pauli X,Y,Z
+    const r = rand();
+    if (r < 1/3){
+      // X
+      state.apply1Q(q,0,0,1,0,1,0,0,0);
+    } else if (r < 2/3){
+      // Y
+      state.apply1Q(q,0,0,0,-1,0,1,0,0);
+    } else {
+      // Z
+      state.apply1Q(q,1,0,0,0,0,0,-1,0);
+    }
+  }
+  function applyNoiseAfter2Q(state, qs){
+    const p = sim.noise.p2;
+    if (p<=0) return;
+    if (rand() > p) return;
+    // Apply random Pauli on each of the two qubits
+    for(const q of qs){
+      applyNoiseAfter1Q(state,q);
+    }
+  }
+  function applyDephasing(state, duration_us){
+    // Random Z rotation per qubit with variance ~ dt/T2
+    const T2_ms = Math.max(1e-6, sim.noise.T2_ms);
+    const dt_ms = duration_us * 1e-3;
+    const sigma = Math.sqrt(dt_ms / T2_ms) * 0.8; // heuristic
+    for(let q=0;q<state.n;q++){
+      const phi = randn()*sigma;
+      state.applyRz(q, phi);
+    }
+  }
+
+  function updateMotional(duration_us){
+    const dt_ms = duration_us * 1e-3;
+    sim.hardware.nbar += sim.hardware.heatingRate * dt_ms;
+    sim.hardware.nbar = Math.max(0, sim.hardware.nbar);
+  }
+
+  async function runProgram(playback=true){
+    if (sim.hardware.ionsLoaded !== sim.n){
+      log(`Cannot run: ${sim.hardware.ionsLoaded} ions loaded, but n=${sim.n}. Load ions first.`);
+      return;
+    }
+    if (!sim.prepared){
+      log("Warning: qubits not optical-pumped; proceeding anyway.");
+    }
+
+    sim.stage = "COMPUTE";
+    sim.hardware.lasers.Raman355 = true;
+    $("#msBadge").textContent="IDLE";
+    $("#msBadge").className="badge";
+
+    const speed = sim.playbackSpeed;
+    const playbackDelay = playback ? (280/ speed) : 0;
+
+    // execute pulses in order
+    for(let i=0;i<pulses.length;i++){
+      const p = pulses[i];
+      if (!p.on) continue;
+
+      const type = p.type;
+      const dur = Math.max(0, parseFloat(p.duration_us||0));
+      const tgs = parseTargets(p.targets);
+
+      // time elapses (for all pulses, including instant vZ)
+      sim.time_us += dur;
+      $("#timePill").textContent = `${sim.time_us.toFixed(1)} µs`;
+
+      if (type==="wait"){
+        sim.hardware.lasers.Raman355 = false;
+        updateMotional(dur);
+        if (sim.noise.enabled) applyDephasing(sim.state, dur);
+        log(`Wait ${dur.toFixed(2)} µs`);
+      }
+      else if (type==="raman"){
+        const q = tgs[0] ?? 0;
+        const omega_kHz = parseFloat(p.omega_kHz||0);
+        const phi = parseFloat(p.phase_rad||0);
+        const theta = 2*Math.PI * omega_kHz * dur * 1e-3; // radians
+        applyRaman(sim.state, q, theta, phi);
+        if (sim.noise.enabled){
+          applyNoiseAfter1Q(sim.state, q);
+          applyDephasing(sim.state, dur);
+        }
+        log(`Raman: q${q}  Ω=${omega_kHz.toFixed(2)} kHz  τ=${dur.toFixed(2)} µs  → θ=${theta.toFixed(3)} rad  φ=${phi.toFixed(3)}`);
+      }
+      else if (type==="vz"){
+        const q = tgs[0] ?? 0;
+        const lam = parseFloat(p.lambda_rad||0);
+        sim.state.applyRz(q, lam);
+        if (sim.noise.enabled){
+          applyNoiseAfter1Q(sim.state, q);
+        }
+        log(`vZ: q${q}  λ=${lam.toFixed(3)} rad`);
+      }
+      else if (type==="ms"){
+        const q1 = tgs[0] ?? 0;
+        const q2 = tgs[1] ?? 1;
+        const det_kHz = Math.max(0.1, parseFloat(p.detuning_kHz||10));
+        const omega_kHz = Math.max(0, parseFloat(p.omega_kHz||0));
+        const psi = parseFloat(p.phase_rad||0);
+        const eta = sim.hardware.eta;
+        const nbar = sim.hardware.nbar;
+
+        // compute XX angle from Monroe-style χ(τ) formula, reduced by Debye-Waller-like factor
+        const delta = 2*Math.PI * det_kHz * 1e3; // rad/s
+        const Omega = 2*Math.PI * omega_kHz * 1e3; // rad/s
+        const tau = dur * 1e-6; // s
+        const DW = Math.exp(-0.5*eta*eta*(2*nbar+1));
+        const OmegaEff = Omega * DW;
+        const A = (tau - Math.sin(delta*tau)/delta);
+        const chi = (OmegaEff*OmegaEff * eta*eta / delta) * A;
+        const theta = 2*chi; // XX(theta) = exp(-i theta/2 XX)
+
+        // phase-space trajectory for visualization: α(t) = -(η Ω / 2δ) (1 - e^{-i δ t}) e^{-i ψ}
+        sim.msViz.points = [];
+        sim.msViz.active = true;
+        sim.msViz.lastParams = {q1,q2,det_kHz,omega_kHz,eta,nbar,dur,psi,theta};
+        const steps = 120;
+        const fac = - (eta * OmegaEff) / (2*delta);
+        for(let k=0;k<=steps;k++){
+          const tt = (k/steps)*tau;
+          const c = Math.cos(delta*tt);
+          const s = Math.sin(delta*tt);
+          // 1 - e^{-i δ t} = 1 - (c - i s) = (1-c) + i s
+          const ar = fac * ((1-c)*Math.cos(psi) - (s)*Math.sin(psi));
+          const ai = fac * ((1-c)*Math.sin(psi) + (s)*Math.cos(psi));
+          // Plot Re(α) vs Im(α)
+          sim.msViz.points.push({x: ar*9, y: ai*9});
+        }
+
+        // apply XX gate
+        sim.state.applyXX(q1,q2, theta);
+
+        // time -> motional heating
+        updateMotional(dur);
+
+        if (sim.noise.enabled){
+          applyNoiseAfter2Q(sim.state,[q1,q2]);
+          applyDephasing(sim.state, dur);
+        }
+
+        $("#msBadge").textContent="ACTIVE";
+        $("#msBadge").className="badge good";
+        log(`MS: q${q1},q${q2}  δ=${det_kHz.toFixed(2)} kHz  Ω=${omega_kHz.toFixed(2)} kHz  τ=${dur.toFixed(2)} µs  η=${eta.toFixed(3)}  n̄=${nbar.toFixed(2)}  → XX(θ=${theta.toFixed(3)} rad)`);
+      }
+      else{
+        log(`Unknown pulse type: ${type}`);
+      }
+
+      sim.state.renorm();
+      updateStateSummary();
+      drawPhaseSpace();
+      drawBloch();
+      drawTrap();
+
+      if (playbackDelay>0) await new Promise(r=>setTimeout(r, playbackDelay));
+    }
+
+    sim.hardware.lasers.Raman355 = false;
+    $("#msBadge").textContent="IDLE";
+    $("#msBadge").className="badge";
+    sim.msViz.active = false;
+    log("Program complete.");
+    updateStateSummary();
+  }
+
+  // ---------- Measurement / Readout ----------
+  function bitstringFromIndex(i, n){
+    // show ions 0..n-1 left-to-right (LSB-first)
+    let s="";
+    for(let q=0;q<n;q++){
+      s += ((i>>q)&1) ? "1" : "0";
+    }
+    return s;
+  }
+
+  function measure(shots, detTime_us, muBright, muDark, thresh){
+    // returns histogram map + photon counts samples
+    const n=sim.state.n;
+    const hist = new Map();
+    const photonsPerIon = Array.from({length:n}, ()=>[]);
+    const lastBits = new Array(n).fill(0);
+
+    // If noise enabled, run trajectories per shot; else sample from final state distribution
+    if (!sim.noise.enabled){
+      const probs = sim.state.probabilities();
+      // build CDF
+      const cdf = new Float64Array(probs.length);
+      let acc=0;
+      for(let i=0;i<probs.length;i++){
+        acc += probs[i];
+        cdf[i]=acc;
+      }
+      for(let s=0;s<shots;s++){
+        const r=rand();
+        let lo=0, hi=cdf.length-1;
+        while(lo<hi){
+          const mid=(lo+hi)>>1;
+          if (r<=cdf[mid]) hi=mid; else lo=mid+1;
+        }
+        const idx=lo;
+        const bits = [];
+        for(let q=0;q<n;q++){
+          bits[q]=(idx>>q)&1;
+          lastBits[q]=bits[q];
+          const lam = bits[q] ? muBright : muDark;
+          photonsPerIon[q].push(poisson(lam));
+        }
+        const bs = bits.join(""); // ion0..ionN-1
+        hist.set(bs, (hist.get(bs)||0)+1);
+      }
+    } else {
+      // stochastic: re-simulate from prepared state each shot
+      const baseState = sim.prepared ? sim.state.clone() : sim.state.clone(); // already contains current? Actually we'd want pre-measure state.
+      // NOTE: Here we interpret "noise enabled" as noise during PROGRAM execution; measurement also stochastic.
+      // We approximate by sampling final state but adding classical detection errors via photons (already stochastic).
+      // For true per-shot gate noise, use "Run Program" with noise enabled before measuring.
+      const probs = baseState.probabilities();
+      const cdf = new Float64Array(probs.length);
+      let acc=0;
+      for(let i=0;i<probs.length;i++){ acc+=probs[i]; cdf[i]=acc; }
+      for(let s=0;s<shots;s++){
+        const r=rand();
+        let lo=0, hi=cdf.length-1;
+        while(lo<hi){
+          const mid=(lo+hi)>>1;
+          if (r<=cdf[mid]) hi=mid; else lo=mid+1;
+        }
+        const idx=lo;
+        const bits = [];
+        for(let q=0;q<n;q++){
+          bits[q]=(idx>>q)&1;
+          lastBits[q]=bits[q];
+          const lam = bits[q] ? muBright : muDark;
+          photonsPerIon[q].push(poisson(lam));
+        }
+        const bs = bits.join("");
+        hist.set(bs, (hist.get(bs)||0)+1);
+      }
+    }
+
+    // Apply thresholding to get "reported" bitstrings from photons (more realistic)
+    const reportedHist = new Map();
+    const reportedLast = new Array(n).fill(0);
+    for(let s=0;s<shots;s++){
+      let bs="";
+      for(let q=0;q<n;q++){
+        const c = photonsPerIon[q][s] ?? 0;
+        const bit = (c >= thresh) ? 1 : 0;
+        bs += bit;
+        reportedLast[q]=bit;
+      }
+      reportedHist.set(bs, (reportedHist.get(bs)||0)+1);
+    }
+
+    return {rawHist: hist, reportedHist, photonsPerIon, lastBits: reportedLast};
+  }
+
+  function updateResults(meas){
+    sim.lastMeasurement = meas;
+    $("#measSummary").textContent = `shots=${parseInt($("#shots").value,10)} · thresh=${$("#thresh").value}`;
+    // histogram (top 12)
+    const entries = Array.from(meas.reportedHist.entries()).sort((a,b)=>b[1]-a[1]).slice(0, 12);
+    const labels = entries.map(e=>e[0]);
+    const values = entries.map(e=>e[1]);
+    drawHistogram(histCanvas, labels, values);
+    $("#histInfo").textContent = `top=${labels.length}`;
+
+    // photon counts: show per ion mean
+    const n=sim.n;
+    const means = [];
+    for(let q=0;q<n;q++){
+      const arr=meas.photonsPerIon[q];
+      const m=arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length);
+      means.push(m);
+    }
+    const phLabels = means.map((_,i)=>`ion${i}`);
+    drawHistogram(photonCanvas, phLabels, means);
+    $("#phInfo").textContent = `⟨counts⟩ per ion`;
+
+    // update trap visualization (fluorescence uses last bits)
+    sim.hardware.lasers.detect369 = true;
+    sim.hardware.lasers.L935 = true;
+    setTimeout(()=>{
+      sim.hardware.lasers.detect369 = false;
+      sim.hardware.lasers.L935 = false;
+      drawTrap();
+      $("#trapSub").textContent = laserStatusString();
+    }, 800);
+
+    $("#trapSub").textContent = laserStatusString() + " · fluorescence: ON";
+    drawTrap();
+  }
+
+  // ---------- State summary ----------
+  function updateStateSummary(){
+    const nrm = sim.state.norm();
+    $("#norm").textContent = nrm.toFixed(6);
+    $("#prepState").textContent = sim.prepared ? `|0…0⟩ (${sim.n} ions)` : "not pumped";
+    // top basis
+    const topK = topBasis(sim.state, 8);
+    if (topK.length>0){
+      $("#topState").textContent = `${topK[0].ket} (${(topK[0].p*100).toFixed(1)}%)`;
+    } else {
+      $("#topState").textContent = "—";
+    }
+    // amplitude list
+    const lines = topK.map(e=>{
+      const ar = e.amp[0], ai = e.amp[1];
+      const phase = Math.atan2(ai, ar);
+      return `${e.ket.padEnd(sim.n+3)}  p=${(e.p*100).toFixed(3).padStart(7)}%   amp=${ar.toFixed(4)} ${ai>=0?"+":"-"} ${Math.abs(ai).toFixed(4)}i   φ=${phase.toFixed(3)}`;
+    }).join("\n");
+    $("#ampList").textContent = lines || "";
+    $("#ampInfo").textContent = `n=${sim.n} dim=${sim.state.dim}`;
+    drawBloch();
+  }
+
+  function topBasis(state, K){
+    const n=state.n;
+    const dim=state.dim;
+    const re=state.re, im=state.im;
+    // keep top K with insertion
+    const top=[];
+    for(let i=0;i<dim;i++){
+      const p = re[i]*re[i] + im[i]*im[i];
+      if (top.length < K || p > top[top.length-1].p){
+        const ket = "|" + bitstringFromIndex(i,n) + "⟩";
+        const item = {i, p, ket, amp:[re[i], im[i]]};
+        // insert sorted
+        let pos=top.length;
+        while(pos>0 && top[pos-1].p < p){ pos--; }
+        top.splice(pos,0,item);
+        if (top.length>K) top.pop();
+      }
+    }
+    return top;
+  }
+
+  // ---------- Laser status string ----------
+  function laserStatusString(){
+    const L = sim.hardware.lasers;
+    const on=[];
+    if (L.L399) on.push("399");
+    if (L.L369) on.push("369");
+    if (L.L935) on.push("935");
+    if (L.L638) on.push("638");
+    if (L.Raman355) on.push("355 Raman");
+    if (L.detect369) on.push("369 det");
+    return "lasers: " + (on.length?on.join(", "):"OFF");
+  }
+
+  // ---------- Hardware processes (tick-based) ----------
+  let lastFrame = performance.now();
+  function tick(now){
+    const dt = Math.min(0.05, (now-lastFrame)/1000);
+    lastFrame = now;
+
+    // Read UI parameters into sim (lightweight)
+    sim.hardware.pressureTarget = parseFloat($("#Ptarget").value);
+    sim.hardware.B0_G = parseFloat($("#B0").value);
+    sim.hardware.rfMHz = parseFloat($("#rfMHz").value);
+    sim.hardware.rfVpp = parseFloat($("#rfVpp").value);
+    sim.hardware.axMHz = parseFloat($("#axMHz").value);
+    sim.hardware.eta = parseFloat($("#eta").value);
+    sim.hardware.heatingRate = parseFloat($("#heatingRate").value);
+    sim.playbackSpeed = parseFloat($("#speed").value);
+    sim.noise.enabled = $("#noiseOn").checked;
+    sim.noise.p1 = parseFloat($("#p1").value);
+    sim.noise.p2 = parseFloat($("#p2").value);
+    sim.noise.T2_ms = parseFloat($("#T2").value);
+
+    $("#etaLabel").textContent = sim.hardware.eta.toFixed(3);
+    $("#heatLabel").textContent = sim.hardware.heatingRate.toFixed(2);
+    $("#speedLabel").textContent = sim.playbackSpeed.toFixed(2) + "×";
+    $("#hfPill").textContent = (CONST.hf_Hz/1e9).toFixed(12) + " GHz";
+
+    // Pump down
+    if (sim.hardware.pumping){
+      const P0 = sim.hardware.pressureTorr;
+      const Pt = sim.hardware.pressureTarget;
+      const tau = sim.hardware.pumpTau_s;
+      // exponential approach
+      const dP = (P0 - Pt) * (1 - Math.exp(-dt/tau));
+      sim.hardware.pressureTorr = Math.max(Pt, P0 - dP);
+      if (sim.hardware.pressureTorr <= Pt*1.2){
+        sim.hardware.pressureTorr = Pt;
+        sim.hardware.pumping = false;
+        log(`Vacuum reached ${Pt.toExponential(2)} Torr.`);
+      }
+    }
+
+    // Oven heating/cooling
+    if (sim.hardware.heating){
+      const T0 = sim.hardware.ovenTempC;
+      const Tt = sim.hardware.ovenTargetC;
+      const tau = sim.hardware.heatTau_s;
+      const dT = (Tt - T0) * (1 - Math.exp(-dt/tau));
+      sim.hardware.ovenTempC = T0 + dT;
+      if (Math.abs(sim.hardware.ovenTempC - Tt) < 1.5){
+        sim.hardware.ovenTempC = Tt;
+        sim.hardware.heating = false;
+        log(`Oven stabilized at ${Tt.toFixed(0)} °C.`);
+      }
+    } else if (sim.hardware.dump){
+      // cool oven down to room
+      const T0 = sim.hardware.ovenTempC;
+      const Tt = 25;
+      const tau = 14.0;
+      const dT = (Tt - T0) * (1 - Math.exp(-dt/tau));
+      sim.hardware.ovenTempC = T0 + dT;
+      if (Math.abs(sim.hardware.ovenTempC - Tt) < 1.2){
+        sim.hardware.ovenTempC = Tt;
+        sim.hardware.dump = false;
+      }
+    }
+
+    // Ion loading (photoionization)
+    if (sim.hardware.loading){
+      // require hot oven + good vacuum-ish
+      const goodVac = sim.hardware.pressureTorr <= 5e-10;
+      const hot = sim.hardware.ovenTempC >= 380;
+      if (goodVac && hot){
+        // probability per second depends on temp and pressure
+        const rate = 0.5 + 2.5*clamp((sim.hardware.ovenTempC-380)/90, 0, 1); // ions/s
+        const pLoad = 1 - Math.exp(-rate*dt);
+        if (rand() < pLoad){
+          if (sim.hardware.ionsLoaded < sim.hardware.ionsTarget){
+            sim.hardware.ionsLoaded += 1;
+            // Newly loaded ions are hot
+            sim.hardware.temp_mK = Math.max(sim.hardware.temp_mK, 5000);
+            sim.hardware.nbar = Math.max(sim.hardware.nbar, 200);
+            log(`Loaded ion ${sim.hardware.ionsLoaded-1}.`);
+            if (sim.hardware.ionsLoaded === sim.hardware.ionsTarget){
+              sim.hardware.loading = false;
+              sim.hardware.lasers.L399=false;
+              sim.hardware.lasers.L369=false;
+              log(`Target ion count reached: ${sim.hardware.ionsLoaded}.`);
+            }
+          }
+        }
+      }
+    }
+
+    // Doppler cooling
+    if (sim.hardware.doppler){
+      const Tt = dopplerLimit_mK(); // ~0.5 mK
+      const tau = 0.7; // seconds, visual
+      const T0 = sim.hardware.temp_mK;
+      const dT = (T0 - Tt) * (1 - Math.exp(-dt/tau));
+      sim.hardware.temp_mK = Math.max(Tt, T0 - dT);
+
+      // nbar approach ~ 12
+      const nt = 14;
+      const n0 = sim.hardware.nbar;
+      const dn = (n0 - nt) * (1 - Math.exp(-dt/tau));
+      sim.hardware.nbar = Math.max(nt, n0 - dn);
+
+      if (sim.hardware.temp_mK <= Tt*1.2){
+        sim.hardware.doppler = false;
+        sim.hardware.lasers.L369=false;
+        sim.hardware.lasers.L935=false;
+        log(`Doppler cooled to ~${Tt.toFixed(3)} mK (Doppler limit).`);
+      }
+    }
+
+    // Sideband cooling
+    if (sim.hardware.sideband){
+      const nt = 0.08;
+      const tau = 1.4; // seconds, visual
+      const n0 = sim.hardware.nbar;
+      const dn = (n0 - nt) * (1 - Math.exp(-dt/tau));
+      sim.hardware.nbar = Math.max(nt, n0 - dn);
+      sim.hardware.temp_mK = Math.max(0.05, sim.hardware.temp_mK * Math.exp(-dt/0.9));
+      if (sim.hardware.nbar <= nt*1.4){
+        sim.hardware.sideband = false;
+        sim.hardware.lasers.Raman355=false;
+        log(`Sideband cooled to n̄≈${sim.hardware.nbar.toFixed(3)}.`);
+      }
+    }
+
+    // Optical pumping (spin init)
+    if (sim.hardware.pumpingSpin){
+      // quick: finalize in ~0.02 s (visual)
+      sim.hardware.pumpSpin_t = (sim.hardware.pumpSpin_t||0) + dt;
+      if (sim.hardware.pumpSpin_t > 0.25){
+        sim.hardware.pumpingSpin = false;
+        sim.hardware.pumpSpin_t = 0;
+        sim.prepared = true;
+        sim.state.reset(); // |0..0>
+        sim.state.setN(sim.n); // ensure correct size and reset
+        sim.state.reset();
+        log("Optical pumping complete: |0…0⟩ initialized.");
+      }
+    }
+
+    // UI status
+    $("#Pnow").textContent = sim.hardware.pressureTorr.toExponential(2);
+    $("#Tnow").textContent = sim.hardware.ovenTempC.toFixed(0);
+    $("#ionCount").textContent = sim.hardware.ionsLoaded;
+    $("#ionTarget").textContent = sim.hardware.ionsTarget;
+    $("#tempMk").textContent = sim.hardware.temp_mK.toFixed(3);
+    $("#nbar").textContent = sim.hardware.nbar.toFixed(3);
+    $("#pumpTau").textContent = sim.hardware.pumpTau_s.toFixed(0) + " s";
+    $("#Tset").textContent = sim.hardware.ovenTargetC.toFixed(0);
+
+    // badges
+    const vac = $("#vacBadge");
+    if (sim.hardware.pressureTorr <= sim.hardware.pressureTarget*1.1){
+      vac.textContent="UHV";
+      vac.className="badge good";
+    } else if (sim.hardware.pressureTorr < 1e-8){
+      vac.textContent="PUMPING";
+      vac.className="badge warn";
+    } else {
+      vac.textContent="VENTED";
+      vac.className="badge bad";
+    }
+
+    const oven = $("#ovenBadge");
+    if (sim.hardware.ovenTempC > 350){
+      oven.textContent="HOT";
+      oven.className="badge warn";
+    } else if (sim.hardware.ovenTempC > 60){
+      oven.textContent="WARM";
+      oven.className="badge";
+    } else {
+      oven.textContent="OFF";
+      oven.className="badge";
+    }
+
+    const ib = $("#ionBadge");
+    if (sim.hardware.ionsLoaded===0){
+      ib.textContent="EMPTY";
+      ib.className="badge";
+    } else if (sim.hardware.ionsLoaded < sim.n){
+      ib.textContent="PARTIAL";
+      ib.className="badge warn";
+    } else {
+      ib.textContent="READY";
+      ib.className="badge good";
+    }
+
+    const cb = $("#coolBadge");
+    if (sim.hardware.nbar < 0.2){
+      cb.textContent="GROUND";
+      cb.className="badge good";
+    } else if (sim.hardware.nbar < 30){
+      cb.textContent="COOLED";
+      cb.className="badge";
+    } else {
+      cb.textContent="HOT";
+      cb.className="badge bad";
+    }
+
+    // stage heuristic
+    if (sim.hardware.pressureTorr > 1e-8) sim.stage="VACUUM";
+    else if (sim.hardware.ovenTempC > 60 && sim.hardware.ionsLoaded===0) sim.stage="OVEN";
+    else if (sim.hardware.ionsLoaded>0 && sim.hardware.nbar>50) sim.stage="LOAD/HOT";
+    else if (sim.hardware.ionsLoaded>0 && sim.hardware.nbar>1) sim.stage="COOLING";
+    else if (sim.hardware.ionsLoaded>0 && sim.prepared && !sim.hardware.detect369) sim.stage="READY";
+    // compute stage set by runProgram
+
+    // Update trap subtitle
+    $("#trapSub").textContent = laserStatusString() + (sim.hardware.detect369 ? " · fluorescence: ON" : " · fluorescence: OFF");
+
+    // redraw (at ~60fps)
+    drawTrap();
+    drawPhaseSpace();
+    drawBloch();
+    updateStateSummary();
+
+    requestAnimationFrame(tick);
+  }
+
+  // ---------- Controls ----------
+  function resetAll(){
+    rngState = 0x12345678 >>> 0;
+    sim.time_us = 0;
+    $("#timePill").textContent = "0.0 µs";
+    sim.stage="IDLE";
+    sim.prepared=false;
+    sim.state.setN(sim.n);
+    sim.state.reset();
+    sim.hardware.pressureTorr = 1e-6;
+    sim.hardware.pumping=false;
+    sim.hardware.ovenTempC=25;
+    sim.hardware.heating=false;
+    sim.hardware.dump=false;
+    sim.hardware.ionsLoaded=0;
+    sim.hardware.loading=false;
+    sim.hardware.temp_mK=30000;
+    sim.hardware.nbar=5000;
+    sim.hardware.doppler=false;
+    sim.hardware.sideband=false;
+    sim.hardware.pumpingSpin=false;
+    sim.hardware.lasers = {L399:false,L369:false,L935:false,L638:false,Raman355:false,detect369:false};
+    sim.msViz.points=[];
+    sim.lastMeasurement=null;
+    clearLog();
+    log("Reset.");
+    updateStateSummary();
+  }
+
+  async function runFullExperiment(){
+    log("=== Full experiment start ===");
+    // 1) Pump down
+    $("#btnPump").click();
+    while(sim.hardware.pumping) await new Promise(r=>setTimeout(r,100));
+    // 2) Heat oven
+    $("#btnHeat").click();
+    while(sim.hardware.heating) await new Promise(r=>setTimeout(r,100));
+    // 3) Load ions
+    $("#btnLoad").click();
+    while(sim.hardware.loading) await new Promise(r=>setTimeout(r,120));
+    // 4) Doppler
+    $("#btnDoppler").click();
+    while(sim.hardware.doppler) await new Promise(r=>setTimeout(r,120));
+    // 5) Sideband
+    $("#btnSideband").click();
+    while(sim.hardware.sideband) await new Promise(r=>setTimeout(r,120));
+    // 6) Optical pump
+    $("#btnPumpState").click();
+    while(sim.hardware.pumpingSpin) await new Promise(r=>setTimeout(r,120));
+    // 7) Run program
+    await runProgram(true);
+    // 8) Readout
+    $("#btnMeasure").click();
+    log("=== Full experiment end ===");
+  }
+
+  // Button hookups
+  $("#btnReset").addEventListener("click", resetAll);
+  $("#btnClearLog").addEventListener("click", clearLog);
+  $("#btnFull").addEventListener("click", runFullExperiment);
+
+  $("#nQubits").addEventListener("input", ()=>{ $("#nQubitsLabel").textContent=$("#nQubits").value; });
+  $("#ionTargetSlider").addEventListener("input", ()=>{ $("#ionTargetLabel").textContent=$("#ionTargetSlider").value; });
+
+  $("#applyN").addEventListener("click", ()=>{
+    const n=parseInt($("#nQubits").value,10);
+    sim.n = n;
+    sim.state.setN(n);
+    sim.state.reset();
+    sim.prepared=false;
+    sim.hardware.ionsTarget = parseInt($("#ionTargetSlider").value,10);
+    // if ions loaded > n, dump extras
+    sim.hardware.ionsLoaded = Math.min(sim.hardware.ionsLoaded, n);
+    // update bloch selector
+    initBlochSelect();
+    updateStateSummary();
+    log(`Set qubits (ions) to n=${n}.`);
+  });
+
+  $("#btnPump").addEventListener("click", ()=>{
+    sim.hardware.pumping=true;
+    log("Started pumping down to UHV.");
+  });
+  $("#btnVent").addEventListener("click", ()=>{
+    sim.hardware.pumping=false;
+    sim.hardware.pressureTorr = 1e-6;
+    log("Vented chamber (simulated).");
+  });
+
+  $("#btnHeat").addEventListener("click", ()=>{
+    sim.hardware.heating=true;
+    sim.hardware.dump=false;
+    sim.hardware.ovenTargetC = 450;
+    log("Heating oven (Yb atomic beam source).");
+  });
+  $("#btnCoolOven").addEventListener("click", ()=>{
+    sim.hardware.heating=false;
+    sim.hardware.dump=true;
+    log("Cooling oven.");
+  });
+
+  $("#btnLoad").addEventListener("click", ()=>{
+    sim.hardware.ionsTarget = parseInt($("#ionTargetSlider").value,10);
+    $("#ionTarget").textContent = sim.hardware.ionsTarget;
+    if (sim.hardware.pressureTorr > 5e-10){
+      log("Cannot load: vacuum too poor. Pump down first.");
+      return;
+    }
+    if (sim.hardware.ovenTempC < 380){
+      log("Cannot load: oven too cold. Heat oven first.");
+      return;
+    }
+    sim.hardware.loading=true;
+    sim.hardware.lasers.L399=true;
+    sim.hardware.lasers.L369=true;
+    log(`Photoionization ON (399 nm + 369 nm). Target ions=${sim.hardware.ionsTarget}.`);
+  });
+  $("#btnUnload").addEventListener("click", ()=>{
+    sim.hardware.loading=false;
+    sim.hardware.ionsLoaded=0;
+    sim.prepared=false;
+    sim.state.reset();
+    log("Dumped ions from trap.");
+  });
+
+  $("#btnDoppler").addEventListener("click", ()=>{
+    if (sim.hardware.ionsLoaded===0){ log("No ions to cool."); return; }
+    sim.hardware.doppler=true;
+    sim.hardware.sideband=false;
+    sim.hardware.lasers.L369=true;
+    sim.hardware.lasers.L935=true;
+    log("Doppler cooling ON (369 nm + 935 nm repump).");
+  });
+
+  $("#btnSideband").addEventListener("click", ()=>{
+    if (sim.hardware.ionsLoaded===0){ log("No ions to cool."); return; }
+    sim.hardware.sideband=true;
+    sim.hardware.doppler=false;
+    sim.hardware.lasers.Raman355=true;
+    log("Resolved sideband cooling (Raman).");
+  });
+
+  $("#btnPumpState").addEventListener("click", ()=>{
+    if (sim.hardware.ionsLoaded===0){ log("No ions to pump."); return; }
+    sim.hardware.pumpingSpin=true;
+    sim.hardware.pumpSpin_t=0;
+    sim.hardware.lasers.L369=true;
+    setTimeout(()=>{ sim.hardware.lasers.L369=false; }, 600);
+    log("Optical pumping pulse (369 nm) → |0…0⟩.");
+  });
+
+  $("#btnRun").addEventListener("click", async ()=>{
+    await runProgram(true);
+  });
+
+  $("#btnMeasure").addEventListener("click", ()=>{
+    const shots = parseInt($("#shots").value,10);
+    const det = parseFloat($("#detTime").value);
+    const muB = parseFloat($("#muBright").value);
+    const muD = parseFloat($("#muDark").value);
+    const thr = parseFloat($("#thresh").value);
+    const meas = measure(shots, det, muB, muD, thr);
+    updateResults(meas);
+    // summary
+    const entries = Array.from(meas.reportedHist.entries()).sort((a,b)=>b[1]-a[1]);
+    const top = entries.slice(0,4).map(e=>`${e[0]}:${e[1]}`).join("  ");
+    $("#measSummary").textContent = `top: ${top || "—"}`;
+    log(`Readout done (${shots} shots).`);
+  });
+
+  $("#btnAdd").addEventListener("click", ()=>{
+    const t=$("#addType").value;
+    pulses.push(defaultPulse(t));
+    renderPulseTable();
+  });
+
+  $("#btnLoadPreset").addEventListener("click", ()=>{
+    loadPreset($("#preset").value);
+    renderPulseTable();
+    log(`Loaded preset: ${$("#preset").value}`);
+  });
+
+  $("#btnExport").addEventListener("click", ()=>{
+    const payload = JSON.stringify({n: sim.n, pulses}, null, 2);
+    navigator.clipboard?.writeText(payload).then(()=>{
+      log("Program JSON copied to clipboard.");
+    }).catch(()=>{
+      prompt("Copy program JSON:", payload);
+    });
+  });
+  $("#btnImport").addEventListener("click", ()=>{
+    const txt = prompt("Paste program JSON:");
+    if (!txt) return;
+    try{
+      const obj = JSON.parse(txt);
+      if (obj.n) { sim.n = obj.n; $("#nQubits").value=obj.n; $("#nQubitsLabel").textContent=obj.n; sim.state.setN(sim.n); sim.state.reset(); initBlochSelect(); }
+      if (Array.isArray(obj.pulses)) pulses = obj.pulses;
+      renderPulseTable();
+      log("Imported program JSON.");
+    }catch(e){
+      alert("Invalid JSON.");
+    }
+  });
+
+  $("#btnCompile").addEventListener("click", ()=>{
+    try{
+      const qasm = $("#qasm").value;
+      const compiled = compileQASM(qasm);
+      sim.n = compiled.n;
+      $("#nQubits").value=sim.n;
+      $("#nQubitsLabel").textContent=sim.n;
+      sim.state.setN(sim.n);
+      sim.state.reset();
+      initBlochSelect();
+      pulses = compiled.pulses;
+      renderPulseTable();
+      log("Compiled QASM to pulses.");
+    }catch(e){
+      console.error(e);
+      alert("QASM compile error: " + e.message);
+    }
+  });
+
+  $("#btnSnap").addEventListener("click", ()=>{
+    // snapshot trap canvas as png
+    const a=document.createElement("a");
+    a.download = `iontrap_snapshot_${(++sim.ui.snapshotCount)}.png`;
+    a.href = trapCanvas.toDataURL("image/png");
+    a.click();
+    log("Saved snapshot PNG.");
+  });
+
+  // ---------- Presets ----------
+  function loadPreset(name){
+    if (name==="empty"){
+      pulses = [];
+      return;
+    }
+    if (name==="bell"){
+      // Bell: |00> -> XX(pi/2) -> vZ on q0 by +pi/2 to fix phase -> measure
+      sim.n = 2;
+      $("#nQubits").value=2; $("#nQubitsLabel").textContent="2";
+      sim.state.setN(2); sim.state.reset();
+      initBlochSelect();
+      pulses = [
+        {on:true, type:"ms", targets:"0,1", duration_us:100, detuning_kHz:10, omega_kHz:70, phase_rad:0, autoClose:true, label:"MS XX(pi/2)"},
+        {on:true, type:"vz", targets:"0", duration_us:0, lambda_rad:Math.PI/2, label:"Phase fix"},
+      ];
+      return;
+    }
+    if (name==="ghz"){
+      // GHZ: apply H to q0, then MS entangle q0 with others via XX(pi/2) chain
+      const n = sim.n;
+      pulses = [];
+      // H on q0 = vZ(pi) + Ry(pi/2)
+      pulses.push({on:true, type:"vz", targets:"0", duration_us:0, lambda_rad:Math.PI, label:"H part (Z)"});
+      pulses.push({on:true, type:"raman", targets:"0", duration_us:2.5, omega_kHz:100, phase_rad:Math.PI/2, label:"H part (Ry π/2)"});
+      for(let k=1;k<n;k++){
+        pulses.push({on:true, type:"ms", targets:`0,${k}`, duration_us:100, detuning_kHz:10, omega_kHz:70, phase_rad:0, autoClose:true, label:`Entangle 0-${k}`});
+      }
+      return;
+    }
+    if (name==="qft3"){
+      // A small QFT demo on 3 qubits using H + controlled phase approximations compiled via CNOT macro-ish
+      sim.n = 3;
+      $("#nQubits").value=3; $("#nQubitsLabel").textContent="3";
+      sim.state.setN(3); sim.state.reset();
+      initBlochSelect();
+      // We'll build: H0, CP01(pi/2), CP02(pi/4), H1, CP12(pi/2), H2
+      // Implement CP via: (H on target) CNOT(control,target) Rz(phi) on target CNOT H (this is standard)
+      pulses = [];
+      function addH(q){
+        pulses.push({on:true, type:"vz", targets:`${q}`, duration_us:0, lambda_rad:Math.PI, label:"H(Z)"});
+        pulses.push({on:true, type:"raman", targets:`${q}`, duration_us:2.5, omega_kHz:100, phase_rad:Math.PI/2, label:"H(Ry)"});
+      }
+      function addCNOT(c,t){
+        // Expand using pulse-level primitive sequence (same as applyCNOT_via_XX, but as pulses)
+        const add = (type, targets, extra)=>pulses.push(Object.assign({on:true,type,targets}, extra));
+        // H on control
+        add("vz", `${c}`, {duration_us:0, lambda_rad:Math.PI, label:"Hc(Z)"});
+        add("raman", `${c}`, {duration_us:2.5, omega_kHz:100, phase_rad:Math.PI/2, label:"Hc(Ry)"});
+        // XX
+        add("ms", `${c},${t}`, {duration_us:100, detuning_kHz:10, omega_kHz:70, phase_rad:0, autoClose:true, label:"XX(pi/2)"});
+        // H on both
+        [c,t].forEach(q=>{
+          add("vz", `${q}`, {duration_us:0, lambda_rad:Math.PI, label:"H(Z)"});
+          add("raman", `${q}`, {duration_us:2.5, omega_kHz:100, phase_rad:Math.PI/2, label:"H(Ry)"});
+        });
+        // Rz(-pi/2) on both
+        add("vz", `${c}`, {duration_us:0, lambda_rad:-Math.PI/2, label:"Rz"});
+        add("vz", `${t}`, {duration_us:0, lambda_rad:-Math.PI/2, label:"Rz"});
+        // H on target
+        add("vz", `${t}`, {duration_us:0, lambda_rad:Math.PI, label:"Ht(Z)"});
+        add("raman", `${t}`, {duration_us:2.5, omega_kHz:100, phase_rad:Math.PI/2, label:"Ht(Ry)"});
+      }
+      function addCP(c,t,phi){
+        // CP = |11> gets phase e^{i phi}
+        // Standard: H(t); CNOT(c,t); Rz(phi) on t; CNOT(c,t); H(t)
+        addH(t);
+        addCNOT(c,t);
+        pulses.push({on:true, type:"vz", targets:`${t}`, duration_us:0, lambda_rad:phi, label:`Rz(${phi.toFixed(2)})`});
+        addCNOT(c,t);
+        addH(t);
+      }
+      addH(0);
+      addCP(0,1, Math.PI/2);
+      addCP(0,2, Math.PI/4);
+      addH(1);
+      addCP(1,2, Math.PI/2);
+      addH(2);
+      return;
+    }
+    if (name==="dj3"){
+      // Deutsch–Jozsa demo (3 qubits): prepare |0..0>, apply H on all, oracle (balanced example), H on first 2, measure first 2.
+      sim.n = 3;
+      $("#nQubits").value=3; $("#nQubitsLabel").textContent="3";
+      sim.state.setN(3); sim.state.reset();
+      initBlochSelect();
+      pulses = [];
+      function addH(q){
+        pulses.push({on:true, type:"vz", targets:`${q}`, duration_us:0, lambda_rad:Math.PI, label:"H(Z)"});
+        pulses.push({on:true, type:"raman", targets:`${q}`, duration_us:2.5, omega_kHz:100, phase_rad:Math.PI/2, label:"H(Ry)"});
+      }
+      // H on all
+      addH(0); addH(1); addH(2);
+      // Oracle: f(x)=x0 XOR x1 (balanced). Implement by CNOTs into ancilla (q2)
+      // Use XX-based CNOT macro pulses (simplified: we just add one MS + locals each time)
+      // We'll just implement as: CNOT(0,2); CNOT(1,2)
+      // For brevity, use a rough macro: applyXX(π/2) plus local rotations approximating CNOT
+      function addCNOT_fast(c,t){
+        // This is a shorter but still Clifford-compatible sequence:
+        // H(c); XX(pi/2); H(c,t); Rz(-pi/2)(c,t); H(t)  (same as earlier)
+        pulses.push({on:true, type:"vz", targets:`${c}`, duration_us:0, lambda_rad:Math.PI, label:"Hc(Z)"});
+        pulses.push({on:true, type:"raman", targets:`${c}`, duration_us:2.5, omega_kHz:100, phase_rad:Math.PI/2, label:"Hc(Ry)"});
+        pulses.push({on:true, type:"ms", targets:`${c},${t}`, duration_us:100, detuning_kHz:10, omega_kHz:70, phase_rad:0, autoClose:true, label:"XX(pi/2)"});
+        // H on both
+        [c,t].forEach(q=>{
+          pulses.push({on:true, type:"vz", targets:`${q}`, duration_us:0, lambda_rad:Math.PI, label:"H(Z)"});
+          pulses.push({on:true, type:"raman", targets:`${q}`, duration_us:2.5, omega_kHz:100, phase_rad:Math.PI/2, label:"H(Ry)"});
+        });
+        pulses.push({on:true, type:"vz", targets:`${c}`, duration_us:0, lambda_rad:-Math.PI/2, label:"Rz"});
+        pulses.push({on:true, type:"vz", targets:`${t}`, duration_us:0, lambda_rad:-Math.PI/2, label:"Rz"});
+        pulses.push({on:true, type:"vz", targets:`${t}`, duration_us:0, lambda_rad:Math.PI, label:"Ht(Z)"});
+        pulses.push({on:true, type:"raman", targets:`${t}`, duration_us:2.5, omega_kHz:100, phase_rad:Math.PI/2, label:"Ht(Ry)"});
+      }
+      addCNOT_fast(0,2);
+      addCNOT_fast(1,2);
+      // H on first 2
+      addH(0); addH(1);
+      return;
+    }
+  }
+
+  // ---------- QASM compiler (very small subset) ----------
+  function compileQASM(text){
+    const lines = text.split(/\r?\n/).map(l=>l.replace(/\/\/.*$/,"").trim()).filter(Boolean);
+    let n = null;
+    const out = [];
+    function addPulse(p){ out.push(p); }
+
+    function addRz(q, lam){ addPulse({on:true,type:"vz",targets:String(q),duration_us:0,lambda_rad:lam,label:`Rz(${lam})`}); }
+    function addRy(q, theta){
+      // Raman with phi=pi/2
+      const omega_kHz = 100;
+      const dur_us = theta / (2*Math.PI*omega_kHz*1e-3);
+      addPulse({on:true,type:"raman",targets:String(q),duration_us:dur_us,omega_kHz,phase_rad:Math.PI/2,label:`Ry(${theta})`});
+    }
+    function addRx(q, theta){
+      const omega_kHz = 100;
+      const dur_us = theta / (2*Math.PI*omega_kHz*1e-3);
+      addPulse({on:true,type:"raman",targets:String(q),duration_us:dur_us,omega_kHz,phase_rad:0,label:`Rx(${theta})`});
+    }
+    function addH(q){
+      addRz(q, Math.PI);
+      addRy(q, Math.PI/2);
+    }
+    function addCNOT(c,t){
+      // Use the proven Clifford decomposition via XX(pi/2)
+      // 1) H on control
+      addH(c);
+      // 2) MS (calibrated) ≈ XX(pi/2)
+      addPulse({on:true,type:"ms",targets:`${c},${t}`,duration_us:100,detuning_kHz:10,omega_kHz:70,phase_rad:0,autoClose:true,label:"XX(pi/2)"});
+      // 3) H on both
+      addH(c); addH(t);
+      // 4) Rz(-pi/2) on both
+      addRz(c, -Math.PI/2);
+      addRz(t, -Math.PI/2);
+      // 5) H on target
+      addH(t);
+    }
+
+    for(const line of lines){
+      if (line.startsWith("qreg")){
+        const m = line.match(/qreg\s+\w+\[(\d+)\]\s*;/);
+        if (!m) throw new Error("Bad qreg line: " + line);
+        n = parseInt(m[1],10);
+        continue;
+      }
+      if (n==null) throw new Error("Missing qreg.");
+      // single-qubit rotations
+      let m;
+      if ((m=line.match(/^rx\(([^)]+)\)\s+\w+\[(\d+)\]\s*;$/i))){
+        const theta = evalExpr(m[1]);
+        addRx(parseInt(m[2],10), theta);
+        continue;
+      }
+      if ((m=line.match(/^ry\(([^)]+)\)\s+\w+\[(\d+)\]\s*;$/i))){
+        const theta = evalExpr(m[1]);
+        addRy(parseInt(m[2],10), theta);
+        continue;
+      }
+      if ((m=line.match(/^rz\(([^)]+)\)\s+\w+\[(\d+)\]\s*;$/i))){
+        const theta = evalExpr(m[1]);
+        addRz(parseInt(m[2],10), theta);
+        continue;
+      }
+      if ((m=line.match(/^h\s+\w+\[(\d+)\]\s*;$/i))){
+        addH(parseInt(m[1],10));
+        continue;
+      }
+      if ((m=line.match(/^x\s+\w+\[(\d+)\]\s*;$/i))){
+        addRx(parseInt(m[1],10), Math.PI);
+        continue;
+      }
+      if ((m=line.match(/^cx\s+\w+\[(\d+)\]\s*,\s*\w+\[(\d+)\]\s*;$/i))){
+        addCNOT(parseInt(m[1],10), parseInt(m[2],10));
+        continue;
+      }
+      throw new Error("Unsupported line: " + line);
+    }
+
+    return {n: n ?? 1, pulses: out};
+  }
+
+  function evalExpr(expr){
+    // Safe-ish numeric eval: allow pi, numbers, + - * / parentheses
+    const safe = expr.replace(/pi/gi, "Math.PI");
+    if (!/^[\d\s\.\+\-\*\/\(\)MathPI]+$/.test(safe.replace(/Math\.PI/g,"MathPI"))){
+      // more permissive check below
+    }
+    // Final check: only allowed chars
+    if (!/^[0-9eE\.\+\-\*\/\(\)\sMathPI]+$/.test(safe.replace(/Math\.PI/g,"MathPI"))){
+      throw new Error("Unsafe expression: " + expr);
+    }
+    // eslint-disable-next-line no-new-func
+    return Function("Math", "return ("+safe+");")(Math);
+  }
+
+  // ---------- Initialize UI ----------
+  function initBlochSelect(){
+    const sel=$("#blochSelect");
+    sel.innerHTML="";
+    for(let q=0;q<sim.n;q++){
+      const o=document.createElement("option");
+      o.value=String(q);
+      o.textContent=`ion ${q}`;
+      sel.appendChild(o);
+    }
+  }
+
+  // Setup initial
+  initBlochSelect();
+  $("#nQubitsLabel").textContent = $("#nQubits").value;
+  $("#ionTargetLabel").textContent = $("#ionTargetSlider").value;
+  sim.hardware.ionsTarget = parseInt($("#ionTargetSlider").value,10);
+
+  loadPreset("bell");
+  renderPulseTable();
+  updateStateSummary();
+  log("Simulator ready. Tip: click “Run Full Experiment”.");
+
+  // Start render loop
+  requestAnimationFrame(tick);
+
+})();
+</script>
+
+<!--
+References (for the built-in default parameters):
+- J.J. McLoughlin et al., Phys. Rev. A 83, 013406 (2011): 171Yb+ energy levels, wavelengths (369.526 nm, 935.188 nm), hyperfine qubit definition, Γ/2π=19.6 MHz, branching to D3/2 (~0.5%), UHV ~1e-12 Torr.
+- M. Johanning et al., Appl. Phys. B 103, 327–338 (2011): isotope-selective photoionization with 399 nm + 369 nm and oven/atomic-beam considerations.
+- K. Kim et al., New J. Phys. 13, 105003 (2011): clock-state splitting ~12,642,812,118 Hz + quadratic Zeeman term.
+- C. Monroe, “A Primer on Mølmer-Sørensen Gates” (2020): phase-space picture and χ(τ) coupling expressions.
+-->
+</body>
+</html>
