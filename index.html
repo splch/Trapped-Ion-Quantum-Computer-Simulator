@@ -1,1983 +1,2106 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Trapped‑Ion Quantum Computer Digital Twin (171Yb+ • pulse‑level • no dense state‑vector)</title>
-<style>
-  :root{
-    --bg:#0b0f14;
-    --panel:#101823;
-    --panel2:#0e1520;
-    --ink:#e8eef7;
-    --muted:#a9b7c9;
-    --faint:#6f8299;
-    --accent:#7bdcff;
-    --accent2:#9dffbf;
-    --warn:#ffd27b;
-    --bad:#ff7b95;
-    --ok:#9dffbf;
-    --line:#1b2a3d;
-    --shadow: 0 14px 40px rgba(0,0,0,.45);
-    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0;
-    font-family:var(--sans);
-    background: radial-gradient(1200px 700px at 20% 0%, rgba(123,220,255,.14), transparent 55%),
-                radial-gradient(900px 500px at 75% 10%, rgba(157,255,191,.10), transparent 60%),
-                radial-gradient(1400px 900px at 50% 120%, rgba(155,125,255,.10), transparent 60%),
-                var(--bg);
-    color:var(--ink);
-  }
-  header{
-    padding:18px 20px 12px;
-    border-bottom:1px solid var(--line);
-    position:sticky; top:0; z-index:10;
-    backdrop-filter: blur(10px);
-    background: rgba(11,15,20,.72);
-  }
-  header h1{
-    margin:0;
-    font-size:18px;
-    letter-spacing:.2px;
-    display:flex; gap:10px; align-items:center;
-  }
-  header .subtitle{
-    margin-top:6px;
-    color:var(--muted);
-    font-size:12.5px;
-    line-height:1.35;
-  }
-  .badge{
-    font-size:11px;
-    padding:3px 8px;
-    border:1px solid rgba(123,220,255,.35);
-    color:var(--accent);
-    border-radius:999px;
-    background: rgba(123,220,255,.08);
-    white-space:nowrap;
-  }
-  .wrap{
-    display:grid;
-    grid-template-columns: 410px 1fr;
-    gap:14px;
-    padding:14px;
-    max-width: 1600px;
-    margin:0 auto;
-  }
-  .panel{
-    background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-    border:1px solid var(--line);
-    border-radius:14px;
-    box-shadow: var(--shadow);
-    overflow:hidden;
-  }
-  .panel .hd{
-    padding:12px 14px;
-    border-bottom:1px solid var(--line);
-    display:flex; align-items:center; justify-content:space-between;
-    background: rgba(255,255,255,.02);
-  }
-  .panel .hd h2{
-    margin:0;
-    font-size:13px;
-    letter-spacing:.2px;
-    color:var(--ink);
-    display:flex; align-items:center; gap:10px;
-  }
-  .panel .bd{
-    padding:12px 14px;
-  }
-  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
-  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:8px 0;}
-  label{font-size:12px; color:var(--muted);}
-  input[type="range"]{width:180px;}
-  input[type="number"], input[type="text"], select, textarea{
-    background: rgba(0,0,0,.25);
-    border:1px solid rgba(255,255,255,.08);
-    color:var(--ink);
-    border-radius:10px;
-    padding:8px 10px;
-    outline:none;
-    font-size:12px;
-  }
-  textarea{width:100%; min-height: 230px; resize: vertical; font-family:var(--mono); line-height:1.35;}
-  .btns{display:flex; flex-wrap:wrap; gap:8px;}
-  button{
-    cursor:pointer;
-    border:1px solid rgba(255,255,255,.10);
-    background: rgba(255,255,255,.05);
-    color:var(--ink);
-    padding:8px 10px;
-    border-radius:12px;
-    font-size:12px;
-    transition: transform .05s ease, background .2s ease, border .2s ease;
-  }
-  button:hover{background: rgba(255,255,255,.08); border-color: rgba(123,220,255,.25);}
-  button:active{transform: translateY(1px);}
-  button.primary{
-    border-color: rgba(123,220,255,.35);
-    background: rgba(123,220,255,.11);
-    color: var(--accent);
-  }
-  button.good{
-    border-color: rgba(157,255,191,.35);
-    background: rgba(157,255,191,.11);
-    color: var(--accent2);
-  }
-  button.warn{
-    border-color: rgba(255,210,123,.40);
-    background: rgba(255,210,123,.10);
-    color: var(--warn);
-  }
-  .tiny{font-size:11px; color:var(--muted);}
-  .mono{font-family:var(--mono);}
-  .kv{
-    display:grid;
-    grid-template-columns: 1fr auto;
-    gap:6px 10px;
-    font-size:12px;
-    color:var(--muted);
-    padding:10px 12px;
-    background: rgba(0,0,0,.18);
-    border:1px solid rgba(255,255,255,.06);
-    border-radius:12px;
-  }
-  .kv b{color:var(--ink); font-weight:600;}
-  .ok{color:var(--ok);}
-  .bad{color:var(--bad);}
-  .warnTxt{color:var(--warn);}
-  .sep{height:1px; background: var(--line); margin:10px 0;}
-  canvas{
-    width:100%;
-    height: 220px;
-    background: radial-gradient(900px 260px at 20% 0%, rgba(123,220,255,.10), transparent 60%),
-                rgba(0,0,0,.18);
-    border:1px solid rgba(255,255,255,.06);
-    border-radius:14px;
-  }
-  .stack{display:grid; gap:10px;}
-  .pill{
-    display:inline-flex; align-items:center; gap:8px;
-    padding:6px 10px;
-    border-radius:999px;
-    border:1px solid rgba(255,255,255,.10);
-    background: rgba(0,0,0,.18);
-    font-size:12px;
-    color:var(--muted);
-  }
-  .pill .dot{width:9px; height:9px; border-radius:50%;}
-  .log{
-    font-family:var(--mono);
-    font-size:11.5px;
-    line-height:1.35;
-    color:#dbe7ff;
-    background: rgba(0,0,0,.25);
-    border:1px solid rgba(255,255,255,.06);
-    border-radius:12px;
-    padding:10px 10px;
-    max-height: 170px;
-    overflow:auto;
-    white-space: pre-wrap;
-  }
-  table{width:100%; border-collapse:collapse; font-size:12px;}
-  th,td{border-bottom:1px solid rgba(255,255,255,.06); padding:7px 6px; text-align:left; color:var(--muted);}
-  th{color:var(--ink); font-weight:600;}
-  td b{color:var(--ink);}
-  .rightGrid{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:14px;
-  }
-  @media (max-width: 1100px){
-    .wrap{grid-template-columns:1fr}
-    .rightGrid{grid-template-columns:1fr}
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quantum Ion Lab Simulator (Single-File)</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:rgba(255,255,255,.04);
+      --panel2:rgba(255,255,255,.03);
+      --stroke:rgba(255,255,255,.10);
+      --stroke2:rgba(255,255,255,.18);
+      --text:#e9f0fb;
+      --muted:#a7b4c8;
+      --ok:#2fe39a;
+      --warn:#ffd27b;
+      --bad:#ff6b6b;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      letter-spacing:.1px;
+    }
+
+    header{
+      padding:14px 14px 0;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+    }
+    header h1{
+      margin:0;
+      font-size:18px;
+      font-weight:700;
+    }
+    header .sub{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .statusline{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding-bottom:4px;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--warn);
+      box-shadow:0 0 10px rgba(255,210,123,.35);
+    }
+    .pill{
+      border:1px solid var(--stroke);
+      background:var(--panel2);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      white-space:nowrap;
+    }
+    .pill strong{ color:var(--text); font-weight:700; }
+
+    .wrap{
+      padding:14px;
+      display:grid;
+      grid-template-columns: 390px 1fr;
+      gap:14px;
+    }
+
+    .panel{
+      border:1px solid var(--stroke);
+      background:var(--panel);
+      border-radius:14px;
+      padding:12px;
+    }
+    .panel h2{
+      margin:0 0 10px;
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .panel h3{
+      margin:12px 0 8px;
+      font-size:12px;
+      font-weight:800;
+      color:var(--muted);
+      letter-spacing:.2px;
+    }
+
+    .mono{ font-family:var(--mono); }
+
+    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+    .row{ display:flex; gap:10px; align-items:center; }
+    .row.wrap{ flex-wrap:wrap; }
+    .stack{ display:flex; flex-direction:column; gap:10px; }
+    .sep{ height:1px; background:var(--stroke); margin:10px 0; }
+
+    label{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    input[type="number"], input[type="text"], textarea, select{
+      width:100%;
+      border-radius:10px;
+      border:1px solid var(--stroke);
+      background:rgba(0,0,0,.25);
+      color:var(--text);
+      padding:8px 10px;
+      outline:none;
+    }
+    input[type="range"]{ width:100%; }
+    textarea{
+      min-height:110px;
+      resize:vertical;
+      font-family:var(--mono);
+      line-height:1.35;
+      font-size:12px;
+    }
+
+    button{
+      border:1px solid var(--stroke2);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border-radius:12px;
+      padding:9px 10px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:12px;
+    }
+    button:hover{ background:rgba(255,255,255,.08); }
+    button:active{ transform:translateY(1px); }
+
+    .kv{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:8px 10px;
+      font-size:12px;
+      color:var(--muted);
+      align-items:center;
+    }
+    .kv .k{ color:var(--muted); }
+    .kv .v{ font-family:var(--mono); color:var(--text); }
+
+    .spark{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--warn);
+      box-shadow:0 0 10px rgba(255,210,123,.25);
+      border:1px solid rgba(255,255,255,.12);
+      flex:0 0 auto;
+    }
+    .spark.ok{ background:var(--ok); box-shadow:0 0 10px rgba(47,227,154,.25); }
+    .spark.warn{ background:var(--warn); box-shadow:0 0 10px rgba(255,210,123,.25); }
+    .spark.bad{ background:var(--bad); box-shadow:0 0 10px rgba(255,107,107,.25); }
+
+    .cv{
+      width:100%;
+      height:240px;
+      display:block;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background:rgba(0,0,0,.18);
+    }
+    .cv.tall{ height:300px; }
+    .cv.short{ height:180px; }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+    }
+    th,td{
+      border-bottom:1px solid var(--stroke);
+      padding:8px 6px;
+      text-align:left;
+    }
+    th{
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    .log{
+      font-family:var(--mono);
+      font-size:12px;
+      line-height:1.35;
+      color:var(--text);
+      white-space:pre-wrap;
+      margin:0;
+      max-height:180px;
+      overflow:auto;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background:rgba(0,0,0,.25);
+      padding:10px;
+    }
+
+    .right{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+      align-content:start;
+    }
+    .span2{ grid-column:1 / span 2; }
+
+    @media (max-width: 1080px){
+      .wrap{ grid-template-columns: 1fr; }
+      .right{ grid-template-columns:1fr; }
+      .span2{ grid-column:auto; }
+    }
+  </style>
 </head>
+
 <body>
-<header>
-  <h1>
-    Trapped‑Ion Quantum Computer Digital Twin <span class="badge">171Yb+ • pulse‑level • no dense state‑vector</span>
-  </h1>
-  <div class="subtitle">
-    A browser‑only “lab workflow + control stack + readout” simulator. Quantum evolution is simulated using a <b>stabilizer tableau</b>
-    (Clifford circuits) with a <b>stochastic physical error model</b> (dephasing, depolarizing, motional heating, SPAM).<br/>
-    This intentionally avoids a dense 2<sup>n</sup> state‑vector array; it behaves like real hardware: you get <b>shots</b>, not amplitudes.
-  </div>
-</header>
-
-<div class="wrap">
-  <!-- LEFT: controls -->
-  <div class="panel">
-    <div class="hd"><h2>Lab Console</h2><div class="pill"><span class="dot" id="dotReady"></span><span id="readyTxt">Not ready</span></div></div>
-    <div class="bd stack">
-      <div class="kv" id="kvSummary">
-        <div>Vacuum pressure</div><div><b id="kvPressure"></b></div>
-        <div>Oven temperature</div><div><b id="kvOven"></b></div>
-        <div>Trap RF</div><div><b id="kvRF"></b></div>
-        <div>Axial secular ωz/2π</div><div><b id="kvWz"></b></div>
-        <div>Ions loaded</div><div><b id="kvIons"></b></div>
-        <div>Motional n̄ (axial)</div><div><b id="kvNbar"></b></div>
+  <header>
+    <div>
+      <h1>Quantum Ion Lab Simulator</h1>
+      <div class="sub">Vacuum + loading + pulse program + readout + camera + lasers + micromotion (single-file demo).</div>
+    </div>
+    <div class="statusline">
+      <div class="pill">
+        <span id="dotReady" class="dot" aria-hidden="true"></span>
+        <strong id="readyTxt">INIT</strong>
       </div>
+    </div>
+  </header>
 
-      <div class="panel" style="box-shadow:none;">
-        <div class="hd"><h2>Setup & Environment</h2><span class="tiny">pumpdown • oven • loading</span></div>
-        <div class="bd">
-          <div class="row"><label>Target pressure (Torr)</label>
+  <div class="wrap">
+    <!-- LEFT COLUMN -->
+    <div class="stack">
+      <div class="panel">
+        <h2>Vacuum, Oven, Loading</h2>
+
+        <div class="grid2">
+          <label>
+            Base pressure
             <select id="selBaseP">
-              <option value="1e-10">1e‑10 (OK)</option>
-              <option value="1e-11" selected>1e‑11 (UHV)</option>
-              <option value="3e-12">3e‑12 (excellent)</option>
+              <option value="1e-12">1×10⁻¹² mbar</option>
+              <option value="3e-12">3×10⁻¹² mbar</option>
+              <option value="1e-11" selected>1×10⁻¹¹ mbar</option>
+              <option value="3e-11">3×10⁻¹¹ mbar</option>
+              <option value="1e-10">1×10⁻¹⁰ mbar</option>
             </select>
-          </div>
-          <div class="row"><label>Pump speed (arb.)</label>
-            <input id="rngPump" type="range" min="0.2" max="3.0" step="0.1" value="1.2"/>
-            <span class="mono" id="txtPump"></span>
-          </div>
-          <div class="row"><label>Oven setpoint (°C)</label>
-            <input id="rngOven" type="range" min="200" max="550" step="10" value="450"/>
-            <span class="mono" id="txtOvenSet"></span>
-          </div>
-          <div class="row"><label>Photoionization (399+369)</label>
+          </label>
+
+          <label>
+            PI scheme
             <select id="selPI">
-              <option value="off">OFF</option>
-              <option value="on">ON</option>
+              <option value="none">None</option>
+              <option value="ca40" selected>Ca-40 (example)</option>
+              <option value="ca44">Ca-44 (example)</option>
             </select>
-          </div>
-          <div class="btns">
-            <button id="btnPump" class="primary">Pump down</button>
-            <button id="btnBake" class="warn">Bakeout</button>
-            <button id="btnOven" class="primary">Heat oven</button>
-            <button id="btnLoad" class="good">Load ions</button>
-            <button id="btnCool" class="primary">Cool (Doppler → sideband)</button>
-          </div>
-          <div class="tiny" style="margin-top:8px;">
-            Realistic defaults are modeled on common 171Yb+ experiments (photoionization via 398.91 nm + 369.53 nm; cooling/detection on 369.53 nm with 935.2 nm repump). See citations in the assistant message.
-          </div>
+          </label>
         </div>
+
+        <div class="grid2" style="margin-top:10px;">
+          <label>
+            Pump speed <span class="mono">(<span id="txtPump">65</span>%)</span>
+            <input id="rngPump" type="range" min="0" max="100" value="65" />
+          </label>
+
+          <label>
+            Oven set <span class="mono">(<span id="txtOvenSet">40</span>%)</span>
+            <input id="rngOven" type="range" min="0" max="100" value="40" />
+          </label>
+        </div>
+
+        <div class="row wrap" style="margin-top:10px;">
+          <button id="btnPump" type="button">Pump</button>
+          <button id="btnBake" type="button">Bake</button>
+          <button id="btnOven" type="button">Oven</button>
+          <button id="btnLoad" type="button">Load Ions</button>
+          <button id="btnCool" type="button">Cool</button>
+          <button id="btnReset" type="button">Reset</button>
+        </div>
+
+        <div class="sep"></div>
+        <div class="kv">
+          <div class="k">Pressure</div><div class="v" id="kvPressure">—</div>
+          <div class="k">Oven temp</div><div class="v" id="kvOven">—</div>
+          <div class="k">RF drive</div><div class="v" id="kvRF">—</div>
+          <div class="k">ωz estimate</div><div class="v" id="kvWz">—</div>
+          <div class="k">Ions</div><div class="v" id="kvIons">—</div>
+          <div class="k">n̄</div><div class="v" id="kvNbar">—</div>
+        </div>
+
+        <h3>Vacuum View</h3>
+        <canvas id="cvEnv" class="cv short"></canvas>
       </div>
 
-      <div class="panel" style="box-shadow:none;">
-        <div class="hd"><h2>Trap & Qubit Parameters</h2><span class="tiny">RF Paul trap • clock qubit</span></div>
-        <div class="bd">
-          <div class="grid2">
-            <div>
-              <label>Number of ions (qubits)</label><br/>
-              <input id="numQ" type="number" min="1" max="16" value="2" style="width:100%;"/>
-            </div>
-            <div>
-              <label>RF drive Ωrf/2π (MHz)</label><br/>
-              <input id="numRFf" type="number" min="10" max="80" step="1" value="37" style="width:100%;"/>
-            </div>
-            <div>
-              <label>RF Vpp (V)</label><br/>
-              <input id="numRFv" type="number" min="50" max="500" step="10" value="200" style="width:100%;"/>
-            </div>
-            <div>
-              <label>Axial ωz/2π (MHz)</label><br/>
-              <input id="numWz" type="number" min="0.1" max="1.5" step="0.05" value="0.20" style="width:100%;"/>
-            </div>
-            <div>
-              <label>Radial ωr/2π (MHz)</label><br/>
-              <input id="numWr" type="number" min="1" max="6" step="0.1" value="1.0" style="width:100%;"/>
-            </div>
-            <div>
-              <label>B‑field (Gauss)</label><br/>
-              <input id="numB" type="number" min="0" max="15" step="0.5" value="6" style="width:100%;"/>
-            </div>
-          </div>
-          <div class="sep"></div>
-          <div class="grid2">
-            <div>
-              <label>Motional heating (quanta/s)</label><br/>
-              <input id="numHeat" type="number" min="0" max="2000" step="10" value="50" style="width:100%;"/>
-            </div>
-            <div>
-              <label>Qubit T2 (s)</label><br/>
-              <input id="numT2" type="number" min="0.01" max="10000" step="0.1" value="2.5" style="width:100%;"/>
-            </div>
-            <div>
-              <label>1Q gate infidelity</label><br/>
-              <input id="numP1" type="number" min="0" max="0.05" step="0.0001" value="0.0010" style="width:100%;"/>
-            </div>
-            <div>
-              <label>2Q gate infidelity</label><br/>
-              <input id="numP2" type="number" min="0" max="0.20" step="0.0001" value="0.0100" style="width:100%;"/>
-            </div>
-          </div>
-          <div class="tiny" style="margin-top:8px;">Gate errors are applied as stochastic Pauli channels (Pauli‑twirled approximation) + continuous dephasing from T2 during pulse durations.</div>
+      <div class="panel">
+        <h2>Trap & Fields</h2>
+        <div class="grid3">
+          <label>RF f (MHz)<input id="numRFf" type="number" value="28.6" step="0.1" /></label>
+          <label>RF V (Vpp)<input id="numRFv" type="number" value="180" step="1" /></label>
+          <label>B (mT)<input id="numB" type="number" value="0.45" step="0.01" /></label>
         </div>
+        <div class="grid2" style="margin-top:10px;">
+          <label>ωz (MHz)<input id="numWz" type="number" value="1.10" step="0.01" /></label>
+          <label>ωr (MHz)<input id="numWr" type="number" value="3.60" step="0.05" /></label>
+        </div>
+
+        <h3>Ions</h3>
+        <canvas id="cvIons" class="cv"></canvas>
       </div>
 
-      <div class="panel" style="box-shadow:none;">
-        <div class="hd"><h2>Pulse Program</h2><span class="tiny">laser pulses → compiled to calibrated Clifford ops</span></div>
-        <div class="bd">
-          <div class="row">
-            <label>Template</label>
+      <div class="panel">
+        <h2>Pulse Program</h2>
+
+        <div class="grid2">
+          <label>
+            Template
             <select id="selTemplate">
-              <option value="bell" selected>Bell state (2 ions, MS + virtual phase)</option>
-              <option value="ghz">GHZ (N ions, chained entanglement)</option>
-              <option value="bv">Bernstein–Vazirani (N-1 data + 1 ancilla)</option>
-              <option value="randcliff">Random Clifford benchmark</option>
-              <option value="blank">Blank</option>
+              <option value="ramsey" selected>Ramsey</option>
+              <option value="ms">MS Gate</option>
+              <option value="rabi">Rabi</option>
+              <option value="readout">Readout Only</option>
             </select>
+          </label>
+          <div class="row" style="align-items:flex-end;">
+            <button id="btnCompile" type="button" style="flex:1;">Compile</button>
+            <button id="btnRun" type="button" style="flex:1;">Run</button>
           </div>
+        </div>
+
+        <label style="margin-top:10px;">
+          Program (one op per line)
           <textarea id="txtProgram" spellcheck="false"></textarea>
-          <div class="row">
-            <label>Shots</label>
-            <input id="numShots" type="number" min="1" max="20000" step="10" value="1000"/>
-          </div>
-          <div class="btns">
-            <button id="btnCompile" class="primary">Validate / compile</button>
-            <button id="btnRun" class="good">Run program</button>
-            <button id="btnReset" class="warn">Reset lab</button>
-          </div>
-          <div class="tiny" style="margin-top:8px;">
-            Supported ops (pulse‑level): <span class="mono">PUMP_DOWN</span>, <span class="mono">OVEN</span>, <span class="mono">PI</span>, <span class="mono">DOPPLER</span>, <span class="mono">SIDEBAND</span>, <span class="mono">OPTPUMP</span>, <span class="mono">RAMAN</span>, <span class="mono">MS</span>, <span class="mono">VZ</span>, <span class="mono">MEASURE</span>.<br/>
-            Gate compilation is Clifford‑calibrated (π/2 rotations, maximally entangling MS). Non‑Clifford angles are <b>rounded</b> and logged.
-          </div>
-        </div>
+        </label>
+
+        <h3>Pulse Timeline</h3>
+        <canvas id="cvPulse" class="cv short"></canvas>
       </div>
 
-      <div class="panel" style="box-shadow:none;">
-        <div class="hd"><h2>Log</h2><span class="tiny">what the control computer did</span></div>
-        <div class="bd">
-          <div class="log" id="log"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RIGHT: visuals -->
-  <div class="stack">
-    <div class="rightGrid">
       <div class="panel">
-        <div class="hd"><h2>Vacuum, Oven, Trap</h2><span class="tiny">environmental state</span></div>
-        <div class="bd stack">
-          <canvas id="cvEnv" width="900" height="440"></canvas>
-          <div class="tiny">Gauge: pressure (log), oven temperature ramp, RF/axial frequencies, and a simple collision‑risk estimator.</div>
+        <h2>Shot & Noise Model</h2>
+
+        <div class="grid3">
+          <label>Qubits<input id="numQ" type="number" min="1" max="16" value="4" step="1" /></label>
+          <label>Shots<input id="numShots" type="number" min="1" max="50000" value="2000" step="100" /></label>
+          <label>Sensor
+            <select id="selSensor">
+              <option value="pmts" selected>PMTs</option>
+              <option value="camera">Camera</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid3" style="margin-top:10px;">
+          <label>XTalk (0–1)<input id="numXtalk" type="number" value="0.05" min="0" max="1" step="0.01" /></label>
+          <label>T2 (ms)<input id="numT2" type="number" value="25" min="0.1" step="0.5" /></label>
+          <label>Heat (q/ms)<input id="numHeat" type="number" value="0.03" min="0" step="0.01" /></label>
+        </div>
+
+        <div class="grid2" style="margin-top:10px;">
+          <label>Two-qubit p1 (1q proxy)<input id="numP1" type="number" value="0.006" min="0" max="1" step="0.001" /></label>
+          <label>Two-qubit p2 (corr)<input id="numP2" type="number" value="0.002" min="0" max="1" step="0.001" /></label>
         </div>
       </div>
 
       <div class="panel">
-        <div class="hd"><h2>Ion Chain & Modes</h2><span class="tiny">Coulomb crystal + motion</span></div>
-        <div class="bd stack">
-          <canvas id="cvIons" width="900" height="440"></canvas>
-          <div class="tiny">Ion positions are computed by minimizing the 1D harmonic + Coulomb potential. Motional n̄ evolves under cooling/heating; it affects MS gate error in the model.</div>
+        <h2>Readout</h2>
+        <div class="grid3">
+          <label>Det. time (µs)<input id="numDetT" type="number" value="200" step="10" /></label>
+          <label>Bright μ (cts)<input id="numBright" type="number" value="26" step="1" /></label>
+          <label>Dark μ (cts)<input id="numDark" type="number" value="3" step="1" /></label>
         </div>
-      </div>
 
-      <div class="panel">
-        <div class="hd"><h2>Pulse Timeline</h2><span class="tiny">AOM/EOM pulses (schematic)</span></div>
-        <div class="bd stack">
-          <canvas id="cvPulse" width="900" height="440"></canvas>
-          <div class="tiny">Timeline shows pulse blocks with durations; Raman and MS pulses include the model’s dephasing window and motional heating during the pulse.</div>
+        <div class="grid3" style="margin-top:10px;">
+          <label>Threshold (cts)<input id="numThresh" type="number" value="12" step="1" /></label>
+          <label>Classifier
+            <select id="selClassifier">
+              <option value="threshold" selected>Threshold</option>
+              <option value="naivebayes">Naive Bayes</option>
+              <option value="llr">LLR (slider)</option>
+            </select>
+          </label>
+          <label>LLR <span class="mono">(<span id="txtLLR">0.0</span>)</span>
+            <input id="rngLLR" type="range" min="-6" max="6" value="0" step="0.1" />
+          </label>
         </div>
-      </div>
 
-      <div class="panel">
-        <div class="hd"><h2>Readout</h2><span class="tiny">photon counts → threshold → bits</span></div>
-        <div class="bd stack">
-          <canvas id="cvReadout" width="900" height="440"></canvas>
-          <div class="grid2">
-            <div>
-              <label>Detection time (µs)</label><br/>
-              <input id="numDetT" type="number" min="10" max="5000" step="10" value="300" style="width:100%;"/>
-            </div>
-            <div>
-              <label>PMT bright mean (counts)</label><br/>
-              <input id="numBright" type="number" min="1" max="200" step="1" value="25" style="width:100%;"/>
-            </div>
-            <div>
-              <label>PMT dark mean (counts)</label><br/>
-              <input id="numDark" type="number" min="0" max="20" step="0.1" value="1.0" style="width:100%;"/>
-            </div>
-            <div>
-              <label>Threshold (counts)</label><br/>
-              <input id="numThresh" type="number" min="0" max="200" step="1" value="10" style="width:100%;"/>
-            </div>
-          </div>
-          <div class="tiny">Photon counts are simulated as Poisson with background; thresholding yields SPAM error. You can tune these to match your detector / NA.</div>
+        <div class="grid3" style="margin-top:10px;">
+          <label>Bin (µs)<input id="numBinUs" type="number" value="5" step="1" /></label>
+          <label>Depump (Hz)<input id="numDepump" type="number" value="700" step="50" /></label>
+          <label>Pump (Hz)<input id="numPump" type="number" value="250" step="25" /></label>
         </div>
-      </div>
-    </div>
 
-    <div class="panel">
-      <div class="hd"><h2>Measurement Distribution</h2><span class="tiny">bitstrings from shots</span></div>
-      <div class="bd">
-        <table>
-          <thead><tr><th>Bitstring</th><th>Counts</th><th>Probability</th></tr></thead>
+        <div class="sep"></div>
+        <div class="kv">
+          <div class="k">SPAM estimate</div><div class="v" id="txtSpam">—</div>
+          <div class="k">Counts model</div><div class="v" id="txtCountsPhysical">—</div>
+        </div>
+
+        <h3>Readout Histogram</h3>
+        <canvas id="cvReadout" class="cv short"></canvas>
+
+        <h3>Outcome Distribution</h3>
+        <canvas id="cvDist" class="cv short"></canvas>
+
+        <h3>Top outcomes</h3>
+        <table class="mono">
+          <thead>
+            <tr>
+              <th style="width:40%;">bitstring</th>
+              <th style="width:30%;">p</th>
+              <th style="width:30%;">N</th>
+            </tr>
+          </thead>
           <tbody id="tblOut"></tbody>
         </table>
-        <div class="tiny" style="margin-top:8px;">In a Bell experiment you should see mostly 00 and 11 (after phase correction), with small leakage set by your gate+readout settings.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Laser Rack</h2>
+
+        <div class="grid2">
+          <label class="row" style="flex-direction:row;justify-content:space-between;">
+            <span>369 nm lock</span>
+            <span class="row" style="gap:8px;">
+              <input id="chkL369" type="checkbox" checked />
+              <span id="spL369" class="spark ok" title="lock status"></span>
+            </span>
+          </label>
+
+          <label class="row" style="flex-direction:row;justify-content:space-between;">
+            <span>399 nm lock</span>
+            <span class="row" style="gap:8px;">
+              <input id="chkL399" type="checkbox" checked />
+              <span id="spL399" class="spark ok"></span>
+            </span>
+          </label>
+
+          <label class="row" style="flex-direction:row;justify-content:space-between;">
+            <span>935 nm lock</span>
+            <span class="row" style="gap:8px;">
+              <input id="chkL935" type="checkbox" checked />
+              <span id="spL935" class="spark ok"></span>
+            </span>
+          </label>
+
+          <label class="row" style="flex-direction:row;justify-content:space-between;">
+            <span>355 nm lock</span>
+            <span class="row" style="gap:8px;">
+              <input id="chkL355" type="checkbox" checked />
+              <span id="spL355" class="spark ok"></span>
+            </span>
+          </label>
+
+          <label class="row" style="flex-direction:row;justify-content:space-between;">
+            <span>638 nm lock</span>
+            <span class="row" style="gap:8px;">
+              <input id="chkL638" type="checkbox" checked />
+              <span id="spL638" class="spark ok"></span>
+            </span>
+          </label>
+
+          <div class="kv" style="grid-column:1 / span 2;">
+            <div class="k">369 err</div><div class="v" id="txtL369Err">—</div>
+            <div class="k">399 err</div><div class="v" id="txtL399Err">—</div>
+            <div class="k">935 err</div><div class="v" id="txtL935Err">—</div>
+            <div class="k">355 err</div><div class="v" id="txtL355Err">—</div>
+            <div class="k">638 err</div><div class="v" id="txtL638Err">—</div>
+          </div>
+        </div>
+
+        <div class="row wrap" style="margin-top:10px;">
+          <button id="btnLockAll" type="button">Lock all</button>
+          <button id="btnUnlockAll" type="button">Unlock all</button>
+          <button id="btnKickLasers" type="button">Kick</button>
+        </div>
+
+        <h3>Laser Diagnostics</h3>
+        <canvas id="cvLaser" class="cv short"></canvas>
+      </div>
+
+      <div class="panel">
+        <h2>Micromotion</h2>
+        <div class="grid2">
+          <label>Comp X (V)<input id="numCompX" type="number" value="0.00" step="0.02" /></label>
+          <label>Comp Y (V)<input id="numCompY" type="number" value="0.00" step="0.02" /></label>
+        </div>
+
+        <div class="sep"></div>
+        <div class="kv">
+          <div class="k">MM amp</div><div class="v" id="txtMMamp">—</div>
+          <div class="k">SB ratio</div><div class="v" id="txtMMratio">—</div>
+        </div>
+
+        <div class="row wrap" style="margin-top:10px;">
+          <button id="btnAutoMM" type="button">Auto-minimize</button>
+        </div>
+
+        <h3>MM Diagnostic</h3>
+        <canvas id="cvMM" class="cv short"></canvas>
+      </div>
+
+      <div class="panel">
+        <h2>Camera View</h2>
+
+        <!-- Fixed markup: ensure labels are closed, and keep controls + canvas neatly grouped -->
+        <div class="row wrap">
+          <label style="flex:1; min-width:150px;">
+            Mode
+            <select id="selCamMode">
+              <option value="counts" selected>Counts</option>
+              <option value="image">Image</option>
+            </select>
+          </label>
+
+          <label style="flex:1; min-width:150px;">
+            Gain <span class="mono">(<span id="txtCamGain">1.0</span>×)</span>
+            <input id="rngCamGain" type="range" min="0.5" max="5" step="0.1" value="1.0" />
+          </label>
+        </div>
+
+        <div class="row wrap" style="margin-top:10px;">
+          <label style="flex:1; min-width:150px;">
+            Blur σ <span class="mono">(<span id="txtCamSigma">1.0</span> px)</span>
+            <input id="rngCamSigma" type="range" min="0.4" max="3.0" step="0.1" value="1.0" />
+          </label>
+
+          <label style="flex:1; min-width:150px;">
+            Pixel scale (µm/px)
+            <input id="numCamScale" type="number" value="1.2" step="0.1" />
+          </label>
+        </div>
+
+        <div class="row wrap" style="margin-top:10px;">
+          <label style="flex:1; min-width:150px;">
+            ROI half-width (px)
+            <input id="numCamROI" type="number" value="14" step="1" min="4" />
+          </label>
+
+          <label style="flex:1; min-width:150px;">
+            Overlay
+            <select id="selCamOverlay">
+              <option value="none" selected>None</option>
+              <option value="roi">ROI</option>
+              <option value="centroid">Centroid</option>
+            </select>
+          </label>
+        </div>
+
+        <h3>Camera</h3>
+        <canvas id="cvCam" class="cv"></canvas>
+      </div>
+
+      <div class="panel">
+        <h2>Calibration</h2>
+        <div class="sub mono" style="color:var(--muted); font-size:12px;">
+          (Placeholder plot — fill with your scan routines if desired.)
+        </div>
+        <h3>Calibration Plot</h3>
+        <canvas id="cvCal" class="cv short"></canvas>
+
+        <h3>Calibration Log</h3>
+        <table class="mono">
+          <thead>
+            <tr>
+              <th style="width:22%;">type</th>
+              <th style="width:22%;">x</th>
+              <th style="width:22%;">y</th>
+              <th style="width:34%;">note</th>
+            </tr>
+          </thead>
+          <tbody id="tblCal"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>Log</h2>
+        <pre id="log" class="log"></pre>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right">
+      <div class="panel span2">
+        <h2>Photon Trace</h2>
+        <canvas id="cvPhoton" class="cv short"></canvas>
+      </div>
+
+      <div class="panel">
+        <h2>MS Diagnostic</h2>
+        <canvas id="cvMS" class="cv short"></canvas>
+      </div>
+
+      <div class="panel">
+        <h2>Spare</h2>
+        <div class="sub" style="color:var(--muted); font-size:12px;">Reserved for extra plots / scans.</div>
+        <canvas class="cv short"></canvas>
       </div>
     </div>
   </div>
-</div>
 
-<script>
-/* ============================================================
-   Trapped‑ion digital twin: pulse‑level + stabilizer simulator
-   ------------------------------------------------------------
-   - Quantum: Aaronson‑Gottesman stabilizer tableau (Cliffords)
-   - Noise: shot‑wise stochastic Pauli errors + dephasing + SPAM
-   - Motion: scalar n̄ with Doppler/sideband cooling and heating
-   - Lab: UHV pumpdown + oven heating + photoionization loading
-   ============================================================ */
+  <script type="module">
+    /********************
+     * Utility & UI cache
+     ********************/
+    const $ = (id) => document.getElementById(id);
 
-// ---------- Utilities ----------
-const TAU = Math.PI * 2;
+    const ui = {
+      // canvases
+      cvEnv: $('cvEnv'),
+      cvIons: $('cvIons'),
+      cvPulse: $('cvPulse'),
+      cvReadout: $('cvReadout'),
+      cvDist: $('cvDist'),
+      cvCam: $('cvCam'),
+      cvPhoton: $('cvPhoton'),
+      cvMS: $('cvMS'),
+      cvLaser: $('cvLaser'),
+      cvMM: $('cvMM'),
+      cvCal: $('cvCal'),
 
-function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
-function lerp(a,b,t){ return a + (b-a)*t; }
-function fmt(x, digits=3){
-  if (!isFinite(x)) return "—";
-  const abs = Math.abs(x);
-  if (abs === 0) return "0";
-  if (abs >= 1e6 || abs < 1e-3) return x.toExponential(digits);
-  return x.toFixed(digits);
-}
-function fmtSI(x, unit){
-  // crude SI prefix formatting
-  const abs = Math.abs(x);
-  const prefixes = [
-    {p:1e-12,s:"p"},
-    {p:1e-9,s:"n"},
-    {p:1e-6,s:"µ"},
-    {p:1e-3,s:"m"},
-    {p:1,s:""},
-    {p:1e3,s:"k"},
-    {p:1e6,s:"M"},
-    {p:1e9,s:"G"},
-  ];
-  let best = prefixes[4];
-  for (const pr of prefixes){
-    if (abs >= pr.p) best = pr;
-  }
-  return (x/best.p).toFixed(3) + " " + best.s + unit;
-}
-function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+      // log
+      log: $('log'),
 
-// Gaussian (Box‑Muller)
-function randn(){
-  let u=0,v=0;
-  while(u===0) u=Math.random();
-  while(v===0) v=Math.random();
-  return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v);
-}
+      // status / kv
+      dotReady: $('dotReady'),
+      readyTxt: $('readyTxt'),
+      kvPressure: $('kvPressure'),
+      kvOven: $('kvOven'),
+      kvRF: $('kvRF'),
+      kvWz: $('kvWz'),
+      kvIons: $('kvIons'),
+      kvNbar: $('kvNbar'),
 
-// Poisson sampler (Knuth for small, normal approx for large)
-function poisson(lambda){
-  lambda = Math.max(0, lambda);
-  if (lambda < 30){
-    const L = Math.exp(-lambda);
-    let k=0, p=1;
-    while(p > L){
-      k++;
-      p *= Math.random();
-    }
-    return k-1;
-  }else{
-    // normal approx
-    const x = lambda + Math.sqrt(lambda)*randn();
-    return Math.max(0, Math.round(x));
-  }
-}
+      // vacuum controls
+      selBaseP: $('selBaseP'),
+      rngPump: $('rngPump'),
+      txtPump: $('txtPump'),
+      rngOven: $('rngOven'),
+      txtOvenSet: $('txtOvenSet'),
+      selPI: $('selPI'),
+      btnPump: $('btnPump'),
+      btnBake: $('btnBake'),
+      btnOven: $('btnOven'),
+      btnLoad: $('btnLoad'),
+      btnCool: $('btnCool'),
+      btnReset: $('btnReset'),
 
-// ---------- Stabilizer Tableau (Aaronson‑Gottesman) ----------
-// Uses bitmasks (n<=16 fits in 32-bit)
-class Stabilizer {
-  constructor(n){
-    this.n = n;
-    this.rows = 2*n + 1;          // last row is scratch
-    this.x = new Uint32Array(this.rows); // X bits
-    this.z = new Uint32Array(this.rows); // Z bits
-    this.r = new Uint8Array(this.rows);  // phase bit (0:+,1:-)
-    this.resetToZero();
-  }
-  resetToZero(){
-    const n = this.n;
-    const R = 2*n;
-    for (let i=0;i<this.rows;i++){
-      this.x[i]=0; this.z[i]=0; this.r[i]=0;
-    }
-    // destabilizers: X_i
-    for (let i=0;i<n;i++){
-      this.x[i] = (1<<i);
-    }
-    // stabilizers: Z_i
-    for (let i=0;i<n;i++){
-      this.z[i+n] = (1<<i);
-    }
-    // scratch row all zero
-    this.x[R]=0; this.z[R]=0; this.r[R]=0;
-  }
-  clone(){
-    const c = new Stabilizer(this.n);
-    c.x.set(this.x);
-    c.z.set(this.z);
-    c.r.set(this.r);
-    return c;
-  }
-  // g function from Aaronson‑Gottesman (returns -1,0,1)
-  static g(x1,z1,x2,z2){
-    if (x1===0 && z1===0) return 0;
-    if (x1===1 && z1===1) return (z2 - x2);
-    if (x1===1 && z1===0) return z2 * (2*x2 - 1);
-    // x1==0 && z1==1
-    return x2 * (1 - 2*z2);
-  }
-  // rowsum(h, i): row h = row i * row h
-  rowsum(h,i){
-    const n = this.n;
-    let sum = 2*this.r[h] + 2*this.r[i]; // sum mod4
-    for (let j=0;j<n;j++){
-      const mask = (1<<j);
-      const x1 = (this.x[i] & mask) ? 1 : 0;
-      const z1 = (this.z[i] & mask) ? 1 : 0;
-      const x2 = (this.x[h] & mask) ? 1 : 0;
-      const z2 = (this.z[h] & mask) ? 1 : 0;
-      sum += Stabilizer.g(x1,z1,x2,z2);
-    }
-    // mod 4 in [0,3]
-    sum = ((sum % 4) + 4) % 4;
-    if (sum !== 0 && sum !== 2){
-      // should never happen for tableau invariants
-      // but clamp defensively
-      sum = (sum & 2);
-    }
-    this.r[h] = (sum===0) ? 0 : 1;
-    this.x[h] ^= this.x[i];
-    this.z[h] ^= this.z[i];
-  }
-  hGate(a){
-    const mask = (1<<a);
-    for (let i=0;i<2*this.n;i++){
-      const xi = (this.x[i] & mask) ? 1 : 0;
-      const zi = (this.z[i] & mask) ? 1 : 0;
-      if (xi && zi) this.r[i] ^= 1;
-      // swap x and z bit at a
-      const xbit = this.x[i] & mask;
-      const zbit = this.z[i] & mask;
-      this.x[i] = (this.x[i] & ~mask) | zbit;
-      this.z[i] = (this.z[i] & ~mask) | xbit;
-    }
-  }
-  sGate(a){
-    const mask = (1<<a);
-    for (let i=0;i<2*this.n;i++){
-      const xi = (this.x[i] & mask) ? 1 : 0;
-      const zi = (this.z[i] & mask) ? 1 : 0;
-      if (xi && zi) this.r[i] ^= 1;
-      // z ^= x
-      if (xi) this.z[i] ^= mask;
-    }
-  }
-  sdgGate(a){ this.sGate(a); this.sGate(a); this.sGate(a); }
-  cnot(c,t){
-    const mC = (1<<c);
-    const mT = (1<<t);
-    for (let i=0;i<2*this.n;i++){
-      const xc = (this.x[i] & mC) ? 1 : 0;
-      const zc = (this.z[i] & mC) ? 1 : 0;
-      const xt = (this.x[i] & mT) ? 1 : 0;
-      const zt = (this.z[i] & mT) ? 1 : 0;
-      if (xc && zt && ((xt ^ zc ^ 1)===1)) this.r[i] ^= 1;
-      // x_t ^= x_c
-      if (xc) this.x[i] ^= mT;
-      // z_c ^= z_t
-      if (zt) this.z[i] ^= mC;
-    }
-  }
-  // Pauli gates (Clifford) as sign flips
-  xGate(a){
-    const mask = (1<<a);
-    for (let i=0;i<2*this.n;i++){
-      if (this.z[i] & mask) this.r[i] ^= 1; // Z or Y flips sign
-    }
-  }
-  zGate(a){
-    const mask = (1<<a);
-    for (let i=0;i<2*this.n;i++){
-      if (this.x[i] & mask) this.r[i] ^= 1; // X or Y flips sign
-    }
-  }
-  yGate(a){
-    const mask = (1<<a);
-    for (let i=0;i<2*this.n;i++){
-      const xi = (this.x[i] & mask) ? 1 : 0;
-      const zi = (this.z[i] & mask) ? 1 : 0;
-      if (xi ^ zi) this.r[i] ^= 1; // flips sign for X or Z
-    }
-  }
+      // trap numbers
+      numRFf: $('numRFf'),
+      numRFv: $('numRFv'),
+      numWz: $('numWz'),
+      numWr: $('numWr'),
+      numB: $('numB'),
 
-  // Measurement in Z basis: returns 0/1 and collapses.
-  measureZ(a){
-    const n = this.n;
-    const R = 2*n;
-    const mask = (1<<a);
+      // program
+      txtProgram: $('txtProgram'),
+      selTemplate: $('selTemplate'),
+      btnCompile: $('btnCompile'),
+      btnRun: $('btnRun'),
 
-    // Case I: find p in stabilizer rows with x_{p,a}=1
-    let p = -1;
-    for (let i=n;i<2*n;i++){
-      if (this.x[i] & mask){ p = i; break; }
+      // shots & noise
+      numQ: $('numQ'),
+      numShots: $('numShots'),
+      selSensor: $('selSensor'),
+      numXtalk: $('numXtalk'),
+      numT2: $('numT2'),
+      numHeat: $('numHeat'),
+      numP1: $('numP1'),
+      numP2: $('numP2'),
+
+      // readout
+      numDetT: $('numDetT'),
+      numBright: $('numBright'),
+      numDark: $('numDark'),
+      numThresh: $('numThresh'),
+      selClassifier: $('selClassifier'),
+      numBinUs: $('numBinUs'),
+      numDepump: $('numDepump'),
+      numPump: $('numPump'),
+      rngLLR: $('rngLLR'),
+      txtLLR: $('txtLLR'),
+      txtSpam: $('txtSpam'),
+      txtCountsPhysical: $('txtCountsPhysical'),
+
+      // micromotion
+      numCompX: $('numCompX'),
+      numCompY: $('numCompY'),
+      txtMMamp: $('txtMMamp'),
+      txtMMratio: $('txtMMratio'),
+      btnAutoMM: $('btnAutoMM'),
+
+      // lasers
+      chkL369: $('chkL369'),
+      chkL399: $('chkL399'),
+      chkL935: $('chkL935'),
+      chkL355: $('chkL355'),
+      chkL638: $('chkL638'),
+      txtL369Err: $('txtL369Err'),
+      txtL399Err: $('txtL399Err'),
+      txtL935Err: $('txtL935Err'),
+      txtL355Err: $('txtL355Err'),
+      txtL638Err: $('txtL638Err'),
+      spL369: $('spL369'),
+      spL399: $('spL399'),
+      spL935: $('spL935'),
+      spL355: $('spL355'),
+      spL638: $('spL638'),
+      btnLockAll: $('btnLockAll'),
+      btnUnlockAll: $('btnUnlockAll'),
+      btnKickLasers: $('btnKickLasers'),
+
+      // camera
+      selCamMode: $('selCamMode'),
+      rngCamGain: $('rngCamGain'),
+      txtCamGain: $('txtCamGain'),
+      rngCamSigma: $('rngCamSigma'),
+      txtCamSigma: $('txtCamSigma'),
+      numCamScale: $('numCamScale'),
+      numCamROI: $('numCamROI'),
+      selCamOverlay: $('selCamOverlay'),
+
+      // tables
+      tblOut: $('tblOut'),
+      tblCal: $('tblCal'),
+    };
+
+    const nowMs = () => performance.now();
+
+    function log(msg){
+      const t = new Date().toLocaleTimeString();
+      ui.log.textContent += `[${t}] ${msg}\n`;
+      ui.log.scrollTop = ui.log.scrollHeight;
     }
-    if (p !== -1){
-      // random outcome
-      for (let i=0;i<2*n;i++){
-        if (i!==p && (this.x[i] & mask)){
-          this.rowsum(i,p);
+
+    /********************
+     * Canvas helpers
+     ********************/
+    function ensureCanvas(c){
+      if(!c) return null;
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const w = Math.max(2, Math.floor(c.clientWidth * dpr));
+      const h = Math.max(2, Math.floor(c.clientHeight * dpr));
+      if(c.width !== w || c.height !== h){
+        c.width = w; c.height = h;
+      }
+      return c.getContext('2d');
+    }
+
+    function clear(ctx){
+      const c = ctx.canvas;
+      ctx.clearRect(0,0,c.width,c.height);
+    }
+
+    function axes(ctx, title){
+      const c = ctx.canvas;
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(255,255,255,.08)';
+      ctx.fillRect(0,0,c.width,c.height);
+      ctx.strokeStyle = 'rgba(255,255,255,.12)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(2,2,c.width-4,c.height-4);
+
+      ctx.fillStyle = 'rgba(255,255,255,.75)';
+      ctx.font = `bold ${Math.max(12, Math.floor(c.height/16))}px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillText(title, 10, 22);
+      ctx.restore();
+    }
+
+    function map(x, a,b, c,d){
+      if(b===a) return (c+d)/2;
+      return c + (x-a)*(d-c)/(b-a);
+    }
+
+    /********************
+     * Simple physics / state
+     ********************/
+    const lab = {
+      t: 0,
+      last: nowMs(),
+      baseP: 1e-11,
+      pumpOn: false,
+      bakeOn: false,
+      ovenOn: false,
+      ovenSet: 0.4, // 0..1
+      pumpSpeed: 0.65, // 0..1
+
+      pressure: 1e-9,
+      ovenTempC: 25,
+      ionsLoaded: 0,
+      nbar: 8.0,
+
+      rf: { fMHz: 28.6, vpp: 180 },
+      trap: { wzMHz: 1.10, wrMHz: 3.60, BmT: 0.45 },
+
+      ions: [],
+
+      program: { text:'', compiled:[], lastError:null },
+      cal: { points:[], tableRows:[] },
+
+      readout: { lastBrightCounts:[], lastDarkCounts:[], lastSpam:null },
+
+      mm: { compX: 0, compY: 0, amp: 0.25, ratio: 0.18 },
+
+      lasers: {
+        L369:{ lock:true, err:0 },
+        L399:{ lock:true, err:0 },
+        L935:{ lock:true, err:0 },
+        L355:{ lock:true, err:0 },
+        L638:{ lock:true, err:0 }
+      },
+
+      cam: {
+        mode:'counts',
+        gain:1.0,
+        sigma:1.0,
+        scaleUmPerPx:1.2,
+        roiHalf:14,
+        overlay:'none',
+        lastImage:null,
+        lastCounts:null,
+        centroid:null
+      }
+    };
+
+    function clamp(x, lo, hi){ return Math.min(hi, Math.max(lo, x)); }
+    function randn(){
+      // Box-Muller
+      let u = 0, v = 0;
+      while(u === 0) u = Math.random();
+      while(v === 0) v = Math.random();
+      return Math.sqrt(-2.0*Math.log(u)) * Math.cos(2.0*Math.PI*v);
+    }
+    function poisson(lambda){
+      // small lambda: Knuth. good enough for a demo
+      const L = Math.exp(-lambda);
+      let k = 0, p = 1;
+      do { k++; p *= Math.random(); } while(p > L);
+      return k - 1;
+    }
+
+    // Very rough vacuum/oven model
+    function pressureUpdate(dt){
+      lab.baseP = parseFloat(ui.selBaseP.value);
+
+      const targetBase = lab.baseP;
+      const pump = lab.pumpOn ? (0.15 + 0.85*lab.pumpSpeed) : 0.0;
+      const bake = lab.bakeOn ? 1.0 : 0.0;
+      const oven = lab.ovenOn ? lab.ovenSet : 0.0;
+
+      // outgassing increases with bake and oven
+      const outgas = (1e-11)*(1 + 12*bake + 18*oven);
+
+      // pump down towards max(targetBase+outgas, ...)
+      const desired = Math.max(targetBase + outgas, 2e-12);
+      const kPump = 0.65 * pump;   // faster if pump on
+      const kLeak = 0.03 + 0.08*oven; // oven adds neutrals -> higher effective "leak"
+      const k = kPump + kLeak;
+
+      lab.pressure += (desired - lab.pressure) * (1 - Math.exp(-k*dt));
+      lab.pressure = Math.max(2e-12, lab.pressure);
+    }
+
+    function ovenUpdate(dt){
+      // thermal RC to target
+      const ambient = 24;
+      const target = lab.ovenOn ? (ambient + 650*lab.ovenSet) : ambient;
+      const tau = lab.ovenOn ? 1.8 : 3.2; // seconds
+      lab.ovenTempC += (target - lab.ovenTempC)*(1 - Math.exp(-dt/tau));
+    }
+
+    function ionsUpdate(dt){
+      // heating from background + oven neutrals, cooling when "cool" toggled
+      const heatBg = 0.004 + 0.03*lab.ovenSet*(lab.ovenOn ? 1:0);
+      const heat = heatBg + (ui.numHeat.valueAsNumber || 0.03);
+      const coolPower = (lab.coolingOn ? 1.0 : 0.0);
+      const coolRate = 0.30 * coolPower; // quanta/ms
+
+      const dn = (heat - coolRate) * dt * 1e3; // dt in s -> ms
+      lab.nbar = Math.max(0.02, lab.nbar + dn);
+
+      // lose ions if pressure high
+      if(lab.ionsLoaded > 0){
+        const lossRate = clamp((lab.pressure - 1e-10)/(5e-10), 0, 1) * 0.4;
+        if(Math.random() < lossRate*dt){
+          lab.ionsLoaded = Math.max(0, lab.ionsLoaded - 1);
+          lab.ions = lab.ions.slice(0, lab.ionsLoaded);
+          log(`Ion lost (pressure event). Remaining: ${lab.ionsLoaded}`);
         }
       }
-      // copy row p to row p-n
-      this.x[p-n] = this.x[p];
-      this.z[p-n] = this.z[p];
-      this.r[p-n] = this.r[p];
-
-      // set stabilizer row p to Z_a with random phase
-      this.x[p] = 0;
-      this.z[p] = mask;
-      this.r[p] = (Math.random()<0.5) ? 0 : 1;
-      return this.r[p];
     }
 
-    // Case II: deterministic
-    this.x[R] = 0; this.z[R] = 0; this.r[R] = 0;
-    for (let i=0;i<n;i++){
-      if (this.x[i] & mask){
-        this.rowsum(R, i+n);
-      }
+    function estimateWz(){
+      // purely cosmetic estimate based on RF and trap knobs
+      const V = lab.rf.vpp;
+      const f = lab.rf.fMHz;
+      const wz = Math.sqrt(Math.max(0.01, (lab.trap.wzMHz*lab.trap.wzMHz) + 1e-4*(V-120) + 1e-3*(f-25)));
+      return wz;
     }
-    return this.r[R];
-  }
 
-  // Peek P(1) for Z measurement without collapsing.
-  peekProb1Z(a){
-    const n = this.n;
-    const R = 2*n;
-    const mask = (1<<a);
-    // if exists stabilizer row with X on a => random
-    for (let i=n;i<2*n;i++){
-      if (this.x[i] & mask) return 0.5;
-    }
-    // deterministic: compute outcome via scratch
-    const xSave = this.x[R], zSave = this.z[R], rSave = this.r[R];
-    this.x[R] = 0; this.z[R] = 0; this.r[R] = 0;
-    for (let i=0;i<n;i++){
-      if (this.x[i] & mask) this.rowsum(R, i+n);
-    }
-    const out = this.r[R];
-    this.x[R]=xSave; this.z[R]=zSave; this.r[R]=rSave;
-    return out ? 1.0 : 0.0;
-  }
-
-  // Expectation for single-qubit Pauli using clone+basis change.
-  expect1Q(q, pauli){
-    if (pauli==="Z"){
-      const p1 = this.peekProb1Z(q);
-      return 1 - 2*p1;
-    }
-    if (pauli==="X"){
-      const t = this.clone();
-      t.hGate(q);
-      const p1 = t.peekProb1Z(q);
-      return 1 - 2*p1;
-    }
-    if (pauli==="Y"){
-      const t = this.clone();
-      t.sdgGate(q);
-      t.hGate(q);
-      const p1 = t.peekProb1Z(q);
-      return 1 - 2*p1;
-    }
-    return 0;
-  }
-}
-
-// ---------- Pulse compiler helpers ----------
-function gate_Rx(tab,q,angleRad, log){
-  // compile to nearest Clifford among {0, ±π/2, π}
-  const a = normAngle(angleRad);
-  const opts = [
-    {a:0, f:()=>{}},
-    {a:Math.PI/2, f:()=>{ tab.hGate(q); tab.sGate(q); tab.hGate(q); }},
-    {a:-Math.PI/2, f:()=>{ tab.hGate(q); tab.sdgGate(q); tab.hGate(q); }},
-    {a:Math.PI, f:()=>{ tab.xGate(q); }},
-    {a:-Math.PI, f:()=>{ tab.xGate(q); }},
-  ];
-  const best = closestAngle(a, opts.map(o=>o.a));
-  const chosen = opts.find(o=>almostEqAngle(o.a, best));
-  if (!almostEqAngle(a,best)) log(`RAMAN Rx(${fmt(a,3)}) rounded to Rx(${fmt(best,3)}) (Clifford-calibrated)`);
-  chosen.f();
-  return best;
-}
-function gate_Ry(tab,q,angleRad, log){
-  const a = normAngle(angleRad);
-  const opts = [
-    {a:0, f:()=>{}},
-    {a:Math.PI/2, f:()=>{ tab.zGate(q); tab.hGate(q); }},     // Ry(+π/2)=Z·H
-    {a:-Math.PI/2, f:()=>{ tab.hGate(q); tab.zGate(q); }},    // Ry(-π/2)=H·Z
-    {a:Math.PI, f:()=>{ tab.yGate(q); }},
-    {a:-Math.PI, f:()=>{ tab.yGate(q); }},
-  ];
-  const best = closestAngle(a, opts.map(o=>o.a));
-  const chosen = opts.find(o=>almostEqAngle(o.a,best));
-  if (!almostEqAngle(a,best)) log(`RAMAN Ry(${fmt(a,3)}) rounded to Ry(${fmt(best,3)})`);
-  chosen.f();
-  return best;
-}
-function gate_Rz(tab,q,angleRad, log){
-  const a = normAngle(angleRad);
-  const opts = [
-    {a:0, f:()=>{}},
-    {a:Math.PI/2, f:()=>{ tab.sGate(q); }},
-    {a:-Math.PI/2, f:()=>{ tab.sdgGate(q); }},
-    {a:Math.PI, f:()=>{ tab.zGate(q); }},
-    {a:-Math.PI, f:()=>{ tab.zGate(q); }},
-  ];
-  const best = closestAngle(a, opts.map(o=>o.a));
-  const chosen = opts.find(o=>almostEqAngle(o.a,best));
-  if (!almostEqAngle(a,best)) log(`VZ/Rz(${fmt(a,3)}) rounded to Rz(${fmt(best,3)})`);
-  chosen.f();
-  return best;
-}
-function gate_MS(tab, a, b, thetaRad, log){
-  // Clifford-calibrated to maximally entangling Rxx(±π/2)
-  // We compile any |theta| closer to π/2; sign chooses ±.
-  const t = normAngle(thetaRad);
-  // choose +pi/2 or -pi/2 as closest
-  const target = (Math.abs(normAngle(t - Math.PI/2)) <= Math.abs(normAngle(t + Math.PI/2))) ? (Math.PI/2) : (-Math.PI/2);
-  if (!almostEqAngle(t,target)) log(`MS theta=${fmt(t,3)} rounded to Rxx(${fmt(target,3)}) (max entangling Clifford)`);
-  // We implement Rxx(+π/2) using decomposition:
-  // H(a) H(b) S(a) S(b) H(b) CNOT(a,b) H(a)
-  // For negative, conjugate by Z on one qubit before & after (approx) – here we just flip sign by Sdg/S swaps.
-  if (target > 0){
-    tab.hGate(a); tab.hGate(b);
-    tab.sGate(a); tab.sGate(b);
-    tab.hGate(b);
-    tab.cnot(a,b);
-    tab.hGate(a);
-  } else {
-    // Rxx(-π/2) = (Rxx(π/2))†. Implement inverse: H(a) CNOT(a,b) H(b) S†(a) S†(b) H(a) H(b)
-    tab.hGate(a);
-    tab.cnot(a,b);
-    tab.hGate(b);
-    tab.sdgGate(a); tab.sdgGate(b);
-    tab.hGate(a); tab.hGate(b);
-  }
-  return target;
-}
-function closestAngle(a, opts){
-  let best = opts[0], bestD = Math.abs(normAngle(a-opts[0]));
-  for (const o of opts){
-    const d = Math.abs(normAngle(a-o));
-    if (d < bestD){ best=o; bestD=d; }
-  }
-  return best;
-}
-function almostEqAngle(a,b){ return Math.abs(normAngle(a-b)) < 1e-6; }
-function normAngle(a){
-  // map to [-pi,pi]
-  let x = a % TAU;
-  if (x > Math.PI) x -= TAU;
-  if (x < -Math.PI) x += TAU;
-  return x;
-}
-
-// ---------- Error model ----------
-function applyDepolarizing1Q(tab, q, p){
-  if (p<=0) return;
-  if (Math.random() >= p) return;
-  const r = Math.floor(Math.random()*3);
-  if (r===0) tab.xGate(q);
-  else if (r===1) tab.yGate(q);
-  else tab.zGate(q);
-}
-function applyDepolarizing2Q(tab, a, b, p){
-  if (p<=0) return;
-  if (Math.random() >= p) return;
-  // choose one of 15 non-identity Pauli products on (a,b)
-  const paulis = ["I","X","Y","Z"];
-  let pA="I", pB="I";
-  while(pA==="I" && pB==="I"){
-    pA = choice(paulis);
-    pB = choice(paulis);
-  }
-  applyPauli(tab, a, pA);
-  applyPauli(tab, b, pB);
-}
-function applyPauli(tab, q, p){
-  if (p==="I") return;
-  if (p==="X") tab.xGate(q);
-  else if (p==="Y") tab.yGate(q);
-  else if (p==="Z") tab.zGate(q);
-}
-
-// Dephasing from T2 over duration t (seconds): phase-flip prob (1-exp(-t/T2))/2
-function applyT2Dephasing(tab, qubits, tSec, T2){
-  if (!(T2>0) || tSec<=0) return;
-  const p = (1 - Math.exp(-tSec / T2)) / 2;
-  if (p<=0) return;
-  for (const q of qubits){
-    if (Math.random() < p) tab.zGate(q);
-  }
-}
-
-// ---------- Simple lab physics model ----------
-const PHYS = {
-  kB: 1.380649e-23,
-  hbar: 1.054571817e-34,
-  eps0: 8.8541878128e-12,
-  e: 1.602176634e-19,
-  amu: 1.66053906660e-27,
-  mYb171: 171 * 1.66053906660e-27
-};
-
-function dopplerLimitTemp_Yb(){
-  // T_D = ħΓ / (2kB), Γ ≈ 2π·19.6 MHz for 369.53 nm transition.
-  const Gamma = TAU * 19.6e6;
-  return PHYS.hbar * Gamma / (2 * PHYS.kB);
-}
-function nbarFromTemp(T, omega){
-  // n̄ ≈ kB T / (ħ ω) for kBT >> ħω
-  return (PHYS.kB * T) / (PHYS.hbar * omega);
-}
-function trapLengthScale(omegaZ){
-  // l = (k_e e^2 / (m ω^2))^(1/3)
-  const ke = 1/(4*Math.PI*PHYS.eps0);
-  const num = ke * (PHYS.e*PHYS.e);
-  const den = PHYS.mYb171 * (omegaZ*omegaZ);
-  return Math.cbrt(num/den);
-}
-// Minimize 1D chain potential U = 0.5 Σ u_i^2 + Σ_{i<j} 1/|u_i-u_j|
-// in dimensionless units; then z = u * l.
-function solveIonChainPositions(N, omegaZ){
-  if (N<=0) return [];
-  if (N===1) return [0];
-  let u = [];
-  const spacing = 1.5;
-  for (let i=0;i<N;i++){
-    u.push((i-(N-1)/2)*spacing);
-  }
-  const steps = 500;
-  let alpha = 0.03;
-  for (let it=0;it<steps;it++){
-    const grad = new Array(N).fill(0);
-    for (let i=0;i<N;i++){
-      // harmonic term
-      grad[i] += u[i];
-      // coulomb
-      for (let j=0;j<N;j++){
-        if (i===j) continue;
-        const d = u[i]-u[j];
-        const ad = Math.abs(d);
-        const denom = (ad*ad*ad) + 1e-9;
-        grad[i] -= d/denom;
-      }
-    }
-    // update
-    let maxStep=0;
-    for (let i=0;i<N;i++){
-      const du = -alpha*grad[i];
-      u[i] += du;
-      maxStep = Math.max(maxStep, Math.abs(du));
-    }
-    if (maxStep < 1e-6) break;
-    // mild anneal
-    alpha *= 0.997;
-  }
-  // scale to meters
-  const l = trapLengthScale(omegaZ);
-  return u.map(x=>x*l);
-}
-
-// ---------- Pulse program parsing ----------
-function parseProgram(text){
-  const lines = text.split(/\r?\n/);
-  const ops = [];
-  let tCursor = 0; // seconds
-  for (let ln=0; ln<lines.length; ln++){
-    let line = lines[ln].trim();
-    if (!line || line.startsWith("#")) continue;
-    // allow inline comments
-    const hash = line.indexOf("#");
-    if (hash >= 0) line = line.slice(0,hash).trim();
-    if (!line) continue;
-    const parts = line.split(/\s+/);
-    const cmd = parts[0].toUpperCase();
-    const kv = {};
-    // parse key=val tokens
-    for (let i=1;i<parts.length;i++){
-      const tok = parts[i];
-      const eq = tok.indexOf("=");
-      if (eq<0) continue;
-      const k = tok.slice(0,eq).toLowerCase();
-      const v = tok.slice(eq+1);
-      kv[k] = v;
-    }
-    // helper parse time to seconds
-    const parseTime = (s, dflt=0) => {
-      if (s===undefined) return dflt;
-      const m = String(s).match(/^([0-9]*\.?[0-9]+)(ns|us|µs|ms|s)$/i);
-      if (!m) return parseFloat(s)||dflt;
-      const val = parseFloat(m[1]);
-      const unit = m[2].toLowerCase().replace("µ","u");
-      if (unit==="ns") return val*1e-9;
-      if (unit==="us") return val*1e-6;
-      if (unit==="ms") return val*1e-3;
-      return val;
+    /********************
+     * Program compiler (tiny DSL)
+     ********************/
+    const templates = {
+      ramsey: [
+        'Doppler 2ms',
+        'OpticalPump 200us',
+        'Pi/2 10us',
+        'Wait 50us',
+        'Pi/2 10us',
+        'Readout 200us'
+      ].join('\n'),
+      rabi: [
+        'Doppler 2ms',
+        'OpticalPump 200us',
+        'Rabi 30us',
+        'Readout 200us'
+      ].join('\n'),
+      ms: [
+        'Doppler 2ms',
+        'OpticalPump 200us',
+        'MS 60us',
+        'Readout 250us'
+      ].join('\n'),
+      readout: [
+        'Readout 250us'
+      ].join('\n'),
     };
-    const parseAngle = (s, dflt=0) => {
-      if (s===undefined) return dflt;
-      const str = String(s).toLowerCase();
-      // allow pi fractions like pi/2, -pi/4
-      if (str.includes("pi")){
-        // crude eval: replace pi with Math.PI and allow / and *
+
+    function parseDuration(tok){
+      // accepts e.g. "200us", "2ms", "0.5s"
+      const m = String(tok).trim().match(/^([0-9]*\.?[0-9]+)\s*(us|µs|ms|s)$/i);
+      if(!m) return null;
+      const x = parseFloat(m[1]);
+      const unit = m[2].toLowerCase();
+      if(unit === 'us' || unit === 'µs') return x*1e-6;
+      if(unit === 'ms') return x*1e-3;
+      if(unit === 's') return x;
+      return null;
+    }
+
+    function compileProgram(text){
+      const lines = text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      const ops = [];
+      for(const ln of lines){
+        const parts = ln.split(/\s+/);
+        const op = parts[0].toLowerCase();
+        const dur = parts[1] ? parseDuration(parts[1]) : null;
+        if(!op) continue;
+
+        const needsDur = !['barrier','idle'].includes(op);
+        if(needsDur && (dur === null || !isFinite(dur))){
+          throw new Error(`Bad duration on line: "${ln}"`);
+        }
+        ops.push({ op, dur: needsDur ? dur : 0, raw: ln });
+      }
+      return ops;
+    }
+
+    /********************
+     * Minimal stabilizer / measurement model
+     * (toy: generates bitstring outcomes with simple error knobs)
+     ********************/
+    class Stabilizer {
+      constructor(n){
+        this.n = n;
+        this.state = new Array(n).fill(0); // computational basis "hidden" state for toy
+      }
+      reset(){
+        this.state.fill(0);
+      }
+      apply(op){
+        // toy effects
+        if(op === 'pi' || op === 'x'){
+          const i = Math.floor(Math.random()*this.n);
+          this.state[i] ^= 1;
+        }
+        if(op === 'pi/2' || op === 'h'){
+          // randomize a subset
+          const p = 0.35;
+          for(let i=0;i<this.n;i++){
+            if(Math.random() < p) this.state[i] ^= 1;
+          }
+        }
+        if(op === 'ms'){
+          // add correlated flips
+          const p2 = clamp(ui.numP2.valueAsNumber || 0.002, 0, 1);
+          for(let i=0;i<this.n-1;i++){
+            if(Math.random() < p2){
+              this.state[i] ^= 1;
+              this.state[i+1] ^= 1;
+            }
+          }
+        }
+      }
+      measureAll(){
+        return this.state.slice();
+      }
+    }
+    window.StabilizerTableau = Stabilizer;
+
+    function applyDecoherence(bits, dt){
+      // dt in seconds, T2 in ms
+      const T2ms = Math.max(0.1, ui.numT2.valueAsNumber || 25);
+      const p = 1 - Math.exp(- (dt*1e3) / T2ms);
+      for(let i=0;i<bits.length;i++){
+        if(Math.random() < p*0.15){ bits[i] ^= 1; }
+      }
+      // independent error proxy for 2q gate infidelity
+      const p1 = clamp(ui.numP1.valueAsNumber || 0.006, 0, 1);
+      for(let i=0;i<bits.length;i++){
+        if(Math.random() < p1){ bits[i] ^= 1; }
+      }
+    }
+
+    /********************
+     * Readout model
+     ********************/
+    function sampleCounts(bit, detT_us){
+      const brightMu = ui.numBright.valueAsNumber || 26;
+      const darkMu   = ui.numDark.valueAsNumber || 3;
+      const depumpHz = ui.numDepump.valueAsNumber || 700;
+      const pumpHz   = ui.numPump.valueAsNumber || 250;
+
+      // effective means scale with integration time
+      const t = detT_us / 200;
+      let muB = brightMu * t;
+      let muD = darkMu * t;
+
+      // depump/pump: mix bright/dark
+      const pBD = 1 - Math.exp(-(depumpHz)*(detT_us*1e-6));
+      const pDB = 1 - Math.exp(-(pumpHz)*(detT_us*1e-6));
+
+      if(bit === 1){ // bright
+        // depump towards dark
+        const mix = pBD;
+        const mu = (1-mix)*muB + mix*muD;
+        return poisson(Math.max(0.05, mu));
+      }else{
+        // pump towards bright
+        const mix = pDB;
+        const mu = (1-mix)*muD + mix*muB;
+        return poisson(Math.max(0.05, mu));
+      }
+    }
+
+    function classifyCount(k){
+      const thr = ui.numThresh.valueAsNumber || 12;
+      const mode = (ui.selClassifier.value || 'threshold').toLowerCase();
+      if(mode === 'llr'){
+        const llr = ui.rngLLR.valueAsNumber || 0;
+        // treat llr as threshold shift in this toy
+        return (k >= (thr + llr)) ? 1 : 0;
+      }
+      if(mode === 'naivebayes'){
+        // crude: a soft threshold using a logistic
+        const s = 1/(1 + Math.exp(-(k - thr)/2));
+        return (Math.random() < s) ? 1 : 0;
+      }
+      return (k >= thr) ? 1 : 0;
+    }
+
+    function addCrosstalk(bits, xtalk){
+      // if a bright ion, slightly increases chance neighbor is classified bright
+      if(bits.length <= 1) return bits;
+      const out = bits.slice();
+      for(let i=0;i<bits.length;i++){
+        if(bits[i] === 1){
+          if(i>0 && Math.random() < xtalk*0.5) out[i-1] = 1;
+          if(i<bits.length-1 && Math.random() < xtalk*0.5) out[i+1] = 1;
+        }
+      }
+      return out;
+    }
+
+    /********************
+     * Run shots
+     ********************/
+    function runShots(ops){
+      const n = clamp(ui.numQ.valueAsNumber || 4, 1, 16) | 0;
+      const shots = clamp(ui.numShots.valueAsNumber || 2000, 1, 50000) | 0;
+      const xtalk = clamp(ui.numXtalk.valueAsNumber || 0.05, 0, 1);
+
+      // load ions count in "hardware" if not present
+      lab.ionsLoaded = n;
+      lab.ions = makeIonChain(n);
+
+      const tab = new Stabilizer(n);
+      tab.reset();
+
+      // program duration
+      const progT = ops.reduce((s,o)=>s+o.dur,0);
+      // apply toy unitary effects
+      for(const o of ops){
+        if(o.op === 'doppler' || o.op === 'opticalpump'){
+          // cooling/pumping reduces nbar a bit
+          lab.nbar = Math.max(0.02, lab.nbar - 0.20);
+        }else if(o.op === 'wait'){
+          applyDecoherence(tab.state, o.dur);
+        }else if(o.op === 'ms'){
+          tab.apply('ms');
+          applyDecoherence(tab.state, o.dur);
+        }else if(o.op === 'pi/2'){
+          tab.apply('pi/2');
+        }else if(o.op === 'pi' || o.op === 'x'){
+          tab.apply('pi');
+        }else if(o.op === 'rabi'){
+          tab.apply('pi');
+        }
+      }
+
+      const detT_us = ui.numDetT.valueAsNumber || 200;
+      const sensor = (ui.selSensor.value || 'pmts').toLowerCase();
+
+      const outcomeCounts = new Map();
+      const brightCounts = [];
+      const darkCounts = [];
+
+      let totalErr = 0;
+
+      for(let s=0; s<shots; s++){
+        // hidden ideal bitstring
+        const ideal = tab.measureAll().slice();
+
+        // sample physical photon counts per ion
+        const counts = new Array(n);
+        for(let i=0;i<n;i++){
+          counts[i] = sampleCounts(ideal[i], detT_us);
+          if(ideal[i] === 1) brightCounts.push(counts[i]); else darkCounts.push(counts[i]);
+        }
+
+        // classify
+        let measured = counts.map(classifyCount);
+        measured = addCrosstalk(measured, xtalk);
+
+        // camera mode: store last frame statistics
+        if(sensor === 'camera'){
+          lab.cam.lastCounts = counts.slice();
+        }
+
+        // error vs ideal
+        for(let i=0;i<n;i++){
+          if(measured[i] !== ideal[i]) totalErr++;
+        }
+
+        const bits = measured.map(b=>b?1:0).join('');
+        outcomeCounts.set(bits, (outcomeCounts.get(bits)||0) + 1);
+      }
+
+      // SPAM estimate (bit error)
+      const spam = totalErr / (shots*n);
+      lab.readout.lastSpam = spam;
+      lab.readout.lastBrightCounts = brightCounts;
+      lab.readout.lastDarkCounts = darkCounts;
+
+      // normalize distribution
+      const outcomes = [...outcomeCounts.entries()]
+        .map(([bits, c]) => ({bits, c, p: c/shots}))
+        .sort((a,b)=> b.c - a.c);
+
+      renderDistributionTable(outcomes);
+      drawDist(outcomes);
+      drawReadout(brightCounts, darkCounts);
+
+      // update camera with synthetic image based on last counts
+      if(sensor === 'camera'){
+        makeCameraFrameFromCounts(lab.cam.lastCounts || new Array(n).fill(0));
+      }
+
+      log(`Run: n=${n}, shots=${shots}, T≈${(progT*1e3).toFixed(2)} ms, SPAM≈${(spam*100).toFixed(2)}%`);
+    }
+
+    function makeIonChain(n){
+      const xs = [];
+      const spacing = 1;
+      const mid = (n-1)/2;
+      for(let i=0;i<n;i++) xs.push((i-mid)*spacing);
+      return xs.map((x,i)=>({x, y:0, i}));
+    }
+
+    /********************
+     * Camera frame synthesis
+     ********************/
+    function gaussian2D(x,y,s){
+      const ss = s*s;
+      return Math.exp(-(x*x + y*y)/(2*ss));
+    }
+
+    function makeCameraFrameFromCounts(counts){
+      const ctx = ensureCanvas(ui.cvCam);
+      if(!ctx) return;
+
+      const n = counts.length;
+      const w = ctx.canvas.width;
+      const h = ctx.canvas.height;
+
+      // image buffer (grayscale)
+      const img = new Float32Array(w*h);
+      img.fill(0);
+
+      const sigma = lab.cam.sigma;
+      const gain = lab.cam.gain;
+
+      // map ion chain into camera coordinates
+      const cx = w*0.5;
+      const cy = h*0.52;
+      const pitch = Math.min(w,h) / Math.max(10, n+2);
+
+      const xs = [];
+      for(let i=0;i<n;i++){
+        xs.push(cx + (i - (n-1)/2)*pitch);
+      }
+
+      for(let i=0;i<n;i++){
+        const amp = gain * (counts[i] || 0);
+        const xi = xs[i];
+        const yi = cy;
+        const r = Math.ceil(4*sigma);
+        const x0 = Math.max(0, Math.floor(xi - r));
+        const x1 = Math.min(w-1, Math.floor(xi + r));
+        const y0 = Math.max(0, Math.floor(yi - r));
+        const y1 = Math.min(h-1, Math.floor(yi + r));
+        for(let yy=y0; yy<=y1; yy++){
+          for(let xx=x0; xx<=x1; xx++){
+            img[yy*w + xx] += amp * gaussian2D(xx-xi, yy-yi, sigma);
+          }
+        }
+      }
+
+      // background + shot noise
+      for(let i=0;i<img.length;i++){
+        img[i] += 2 + 0.12*Math.abs(randn());
+      }
+
+      // compute centroid in ROI (optional)
+      const roiHalf = Math.max(4, lab.cam.roiHalf|0);
+      const roiX0 = Math.max(0, (cx - roiHalf)|0);
+      const roiX1 = Math.min(w-1, (cx + roiHalf)|0);
+      const roiY0 = Math.max(0, (cy - roiHalf)|0);
+      const roiY1 = Math.min(h-1, (cy + roiHalf)|0);
+
+      let sI=0, sX=0, sY=0;
+      for(let yy=roiY0; yy<=roiY1; yy++){
+        for(let xx=roiX0; xx<=roiX1; xx++){
+          const v = img[yy*w+xx];
+          sI += v;
+          sX += v*xx;
+          sY += v*yy;
+        }
+      }
+      lab.cam.centroid = (sI>0) ? {x:sX/sI, y:sY/sI} : null;
+
+      // store for renderer
+      lab.cam.lastImage = img;
+    }
+
+    /********************
+     * Renderers
+     ********************/
+    function drawVacuum(){
+      const ctx = ensureCanvas(ui.cvEnv);
+      if(!ctx) return;
+      clear(ctx);
+      axes(ctx, 'Vacuum / Oven');
+
+      const c = ctx.canvas;
+
+      // Plot log10 pressure over time (simple gauge)
+      const p = lab.pressure;
+      const logp = Math.log10(p);
+      const lo = -12, hi = -8;
+      const x = map(clamp(logp, lo, hi), lo, hi, 20, c.width-20);
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,.22)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(20, c.height*0.55);
+      ctx.lineTo(c.width-20, c.height*0.55);
+      ctx.stroke();
+
+      // tick labels
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+      for(let L=-12; L<=-8; L++){
+        const xx = map(L, lo, hi, 20, c.width-20);
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath();
+        ctx.moveTo(xx, c.height*0.55-8);
+        ctx.lineTo(xx, c.height*0.55+8);
+        ctx.stroke();
+        ctx.globalAlpha = 0.9;
+        ctx.fillText(`1e${L}`, xx-14, c.height*0.55+26);
+      }
+
+      // pointer
+      const col = (p < 3e-11) ? 'var(--ok)' : (p < 2e-10) ? 'var(--warn)' : 'var(--bad)';
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(x, c.height*0.55-18);
+      ctx.lineTo(x, c.height*0.55+18);
+      ctx.stroke();
+
+      // oven bar
+      const temp = lab.ovenTempC;
+      const t0 = 20, t1 = 700;
+      const frac = clamp((temp - t0)/(t1-t0), 0, 1);
+      const barW = (c.width-40)*frac;
+      ctx.fillStyle = 'rgba(255,210,123,.20)';
+      ctx.fillRect(20, c.height*0.74, barW, 10);
+      ctx.strokeStyle = 'rgba(255,255,255,.15)';
+      ctx.strokeRect(20, c.height*0.74, c.width-40, 10);
+      ctx.fillStyle = 'rgba(255,255,255,.65)';
+      ctx.fillText(`Oven ${temp.toFixed(0)} °C`, 20, c.height*0.74-6);
+
+      ctx.restore();
+    }
+
+    function drawIons(){
+      const ctx = ensureCanvas(ui.cvIons);
+      if(!ctx) return;
+      clear(ctx);
+      axes(ctx, 'Ion Chain');
+
+      const c = ctx.canvas;
+      const ions = lab.ions || [];
+      const n = ions.length;
+
+      const y = c.height*0.55;
+      const left = 30, right = c.width-30;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,.16)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(right, y);
+      ctx.stroke();
+
+      if(n === 0){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText('No ions loaded.', left, y-18);
+        ctx.restore();
+        return;
+      }
+
+      for(let i=0;i<n;i++){
+        const x = map(i, 0, Math.max(1,n-1), left, right);
+        // brightness proxy ~ exp(-nbar)
+        const b = Math.exp(-lab.nbar/6);
+        const r = 10;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(47,227,154,${0.25 + 0.55*b})`;
+        ctx.arc(x,y,r,0,Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.12)';
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(255,255,255,.65)';
+        ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText(`${i}`, x-3, y+28);
+      }
+
+      ctx.restore();
+    }
+
+    function drawPulseTimeline(ops){
+      const ctx = ensureCanvas(ui.cvPulse);
+      if(!ctx) return;
+      clear(ctx);
+      axes(ctx, 'Pulse Timeline');
+
+      const c = ctx.canvas;
+      ctx.save();
+
+      if(!ops || ops.length === 0){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText('No compiled program.', 12, 50);
+        ctx.restore();
+        return;
+      }
+
+      const total = ops.reduce((s,o)=>s+o.dur,0);
+      const x0 = 20, x1 = c.width-20;
+      const y0 = 55, h = c.height-70;
+      let t = 0;
+
+      for(const o of ops){
+        const a = t/total;
+        const b = (t+o.dur)/total;
+        const xx0 = map(a,0,1,x0,x1);
+        const xx1 = map(b,0,1,x0,x1);
+
+        const op = o.op;
+        const isRead = op === 'readout';
+        const isCool = (op==='doppler' || op==='opticalpump');
+        const isGate = (op==='pi' || op==='pi/2' || op==='ms' || op==='rabi');
+        const col = isRead ? 'rgba(123,221,255,.35)' : isCool ? 'rgba(255,210,123,.22)' : isGate ? 'rgba(47,227,154,.22)' : 'rgba(255,255,255,.12)';
+
+        ctx.fillStyle = col;
+        ctx.fillRect(xx0, y0, Math.max(1, xx1-xx0), h);
+
+        ctx.strokeStyle = 'rgba(255,255,255,.12)';
+        ctx.strokeRect(xx0, y0, Math.max(1, xx1-xx0), h);
+
+        ctx.save();
+        ctx.translate((xx0+xx1)/2, y0 + h/2);
+        ctx.rotate(-Math.PI/2);
+        ctx.fillStyle = 'rgba(255,255,255,.78)';
+        ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.fillText(o.raw, 0, 4);
+        ctx.restore();
+
+        t += o.dur;
+      }
+
+      ctx.fillStyle = 'rgba(255,255,255,.65)';
+      ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillText(`Total ${(total*1e3).toFixed(2)} ms`, 20, c.height-14);
+
+      ctx.restore();
+    }
+
+    function drawReadout(brightCounts, darkCounts){
+      const ctx = ensureCanvas(ui.cvReadout);
+      if(!ctx) return;
+
+      clear(ctx);
+      axes(ctx, 'Readout Histogram');
+
+      const c = ctx.canvas;
+      ctx.save();
+
+      // update SPAM text
+      if(lab.readout.lastSpam != null){
+        ui.txtSpam.textContent = `${(lab.readout.lastSpam*100).toFixed(2)}%`;
+      }else{
+        ui.txtSpam.textContent = '—';
+      }
+
+      const detT = ui.numDetT.valueAsNumber || 200;
+      const muB = (ui.numBright.valueAsNumber || 26) * (detT/200);
+      const muD = (ui.numDark.valueAsNumber || 3) * (detT/200);
+      const thr = ui.numThresh.valueAsNumber || 12;
+      ui.txtCountsPhysical.innerHTML = `Pois(μ<sub>b</sub>≈${muB.toFixed(1)}), Pois(μ<sub>d</sub>≈${muD.toFixed(1)}), thr=${thr}`;
+
+      if(!brightCounts?.length && !darkCounts?.length){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText('Run shots to populate histogram.', 12, 52);
+        ctx.restore();
+        return;
+      }
+
+      const all = brightCounts.concat(darkCounts);
+      const maxC = Math.max(10, ...all);
+      const bins = Math.min(40, Math.max(12, Math.floor(c.width/24)));
+      const binW = maxC / bins;
+
+      function hist(arr){
+        const h = new Array(bins).fill(0);
+        for(const k of arr){
+          const i = Math.min(bins-1, Math.floor(k/binW));
+          h[i]++;
+        }
+        return h;
+      }
+
+      const hb = hist(brightCounts);
+      const hd = hist(darkCounts);
+      const ymax = Math.max(1, ...hb, ...hd);
+
+      const px0 = 20, px1 = c.width-20;
+      const py0 = 48, py1 = c.height-20;
+
+      // threshold line
+      const tx = map(thr, 0, maxC, px0, px1);
+      ctx.strokeStyle = 'rgba(255,255,255,.35)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tx, py0);
+      ctx.lineTo(tx, py1);
+      ctx.stroke();
+
+      // draw bars
+      for(let i=0;i<bins;i++){
+        const x0 = map(i, 0, bins, px0, px1);
+        const x1 = map(i+1, 0, bins, px0, px1);
+        const yb = map(hb[i], 0, ymax, py1, py0);
+        const yd = map(hd[i], 0, ymax, py1, py0);
+
+        // dark (red-ish)
+        ctx.fillStyle = 'rgba(255,107,107,.35)';
+        ctx.fillRect(x0, yd, Math.max(1, x1-x0-1), py1-yd);
+
+        // bright (green-ish)
+        ctx.fillStyle = 'rgba(47,227,154,.30)';
+        ctx.fillRect(x0, yb, Math.max(1, x1-x0-1), py1-yb);
+      }
+
+      ctx.fillStyle = 'rgba(255,255,255,.65)';
+      ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillText('dark', 24, 42);
+      ctx.fillText('bright', 70, 42);
+
+      ctx.restore();
+    }
+
+    function drawDist(outcomes){
+      const ctx = ensureCanvas(ui.cvDist);
+      if(!ctx) return;
+
+      clear(ctx);
+      axes(ctx, 'Outcome Distribution');
+
+      const c = ctx.canvas;
+      ctx.save();
+
+      if(!outcomes || outcomes.length === 0){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText('Run shots to populate distribution.', 12, 52);
+        ctx.restore();
+        return;
+      }
+
+      const top = outcomes.slice(0, Math.min(16, outcomes.length));
+      const ymax = Math.max(...top.map(o=>o.p));
+      const px0 = 20, px1 = c.width-20;
+      const py0 = 48, py1 = c.height-20;
+
+      for(let i=0;i<top.length;i++){
+        const o = top[i];
+        const x0 = map(i, 0, top.length, px0, px1);
+        const x1 = map(i+1, 0, top.length, px0, px1);
+        const y = map(o.p, 0, ymax, py1, py0);
+
+        ctx.fillStyle = 'rgba(123,221,255,.30)';
+        ctx.fillRect(x0, y, Math.max(2, x1-x0-2), py1-y);
+
+        ctx.fillStyle = 'rgba(255,255,255,.75)';
+        ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.save();
+        ctx.translate((x0+x1)/2, py1+14);
+        ctx.rotate(-Math.PI/6);
+        ctx.textAlign = 'center';
+        ctx.fillText(o.bits, 0, 0);
+        ctx.restore();
+      }
+
+      ctx.fillStyle = 'rgba(255,255,255,.65)';
+      ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillText(`Top ${top.length}`, 20, 42);
+
+      ctx.restore();
+    }
+
+    function drawCamera(){
+      const ctx = ensureCanvas(ui.cvCam);
+      if(!ctx) return;
+
+      clear(ctx);
+      axes(ctx, 'Camera');
+
+      const c = ctx.canvas;
+      ctx.save();
+
+      const img = lab.cam.lastImage;
+      if(!img){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText('Run with Sensor=Camera to render a frame.', 12, 52);
+        ctx.restore();
+        return;
+      }
+
+      const w = c.width, h = c.height;
+      // normalize to 0..255
+      let vmax = 0;
+      for(let i=0;i<img.length;i++) vmax = Math.max(vmax, img[i]);
+      vmax = Math.max(1, vmax);
+
+      const imageData = ctx.createImageData(w,h);
+      for(let i=0;i<w*h;i++){
+        const v = Math.floor(255 * clamp(img[i]/vmax, 0, 1));
+        imageData.data[4*i+0] = v;
+        imageData.data[4*i+1] = v;
+        imageData.data[4*i+2] = v;
+        imageData.data[4*i+3] = 255;
+      }
+      ctx.putImageData(imageData, 0, 0);
+
+      // overlays
+      const cx = w*0.5;
+      const cy = h*0.52;
+      const roiHalf = Math.max(4, lab.cam.roiHalf|0);
+
+      if(lab.cam.overlay === 'roi'){
+        ctx.strokeStyle = 'rgba(255,255,255,.55)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx-roiHalf, cy-roiHalf, 2*roiHalf, 2*roiHalf);
+      }
+      if(lab.cam.overlay === 'centroid' && lab.cam.centroid){
+        const p = lab.cam.centroid;
+        ctx.strokeStyle = 'rgba(47,227,154,.85)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(p.x-10, p.y);
+        ctx.lineTo(p.x+10, p.y);
+        ctx.moveTo(p.x, p.y-10);
+        ctx.lineTo(p.x, p.y+10);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawLaserDiag(){
+      const ctx = ensureCanvas(ui.cvLaser);
+      if(!ctx) return;
+      clear(ctx);
+      axes(ctx, 'Laser Error (arb)');
+
+      const c = ctx.canvas;
+      const keys = ['L369','L399','L935','L355','L638'];
+      const errs = keys.map(k=> lab.lasers[k].err);
+      const ymax = Math.max(1e-6, ...errs.map(e=>Math.abs(e)));
+
+      const px0=20, px1=c.width-20;
+      const py0=48, py1=c.height-18;
+
+      ctx.save();
+      for(let i=0;i<keys.length;i++){
+        const k = keys[i];
+        const e = lab.lasers[k].err;
+        const x0 = map(i,0,keys.length,px0,px1);
+        const x1 = map(i+1,0,keys.length,px0,px1);
+        const yMid = (py0+py1)/2;
+        const y = map(e, -ymax, ymax, py1, py0);
+
+        // axis
+        ctx.strokeStyle = 'rgba(255,255,255,.12)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x0+6, yMid);
+        ctx.lineTo(x1-6, yMid);
+        ctx.stroke();
+
+        // bar from mid to y
+        ctx.strokeStyle = lab.lasers[k].lock ? 'rgba(47,227,154,.8)' : 'rgba(255,107,107,.85)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo((x0+x1)/2, yMid);
+        ctx.lineTo((x0+x1)/2, y);
+        ctx.stroke();
+
+        ctx.fillStyle='rgba(255,255,255,.75)';
+        ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.textAlign='center';
+        ctx.fillText(k.replace('L',''), (x0+x1)/2, py1+14);
+      }
+      ctx.restore();
+    }
+
+    function drawMM(){
+      const ctx = ensureCanvas(ui.cvMM);
+      if(!ctx) return;
+      clear(ctx);
+      axes(ctx, 'Micromotion Sideband');
+
+      const c = ctx.canvas;
+      ctx.save();
+
+      // show simple curve ratio vs comp distance from optimum (0,0)
+      const xOpt=0, yOpt=0;
+      const dx = lab.mm.compX - xOpt;
+      const dy = lab.mm.compY - yOpt;
+      const r = Math.sqrt(dx*dx + dy*dy);
+
+      // amplitude increases with r
+      lab.mm.amp = 0.10 + 0.85*(1 - Math.exp(-r*r/0.20));
+      lab.mm.ratio = 0.02 + 0.60*(1 - Math.exp(-r*r/0.15));
+
+      ui.txtMMamp.textContent = lab.mm.amp.toFixed(3);
+      ui.txtMMratio.textContent = lab.mm.ratio.toFixed(3);
+
+      const px0=20, px1=c.width-20;
+      const py0=50, py1=c.height-18;
+
+      // draw ratio bar
+      const frac = clamp(lab.mm.ratio,0,1);
+      const w = (px1-px0)*frac;
+      ctx.fillStyle='rgba(255,210,123,.25)';
+      ctx.fillRect(px0, (py0+py1)/2-8, w, 16);
+      ctx.strokeStyle='rgba(255,255,255,.15)';
+      ctx.strokeRect(px0, (py0+py1)/2-8, (px1-px0), 16);
+
+      ctx.fillStyle='rgba(255,255,255,.70)';
+      ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillText(`SB ratio ≈ ${(lab.mm.ratio*100).toFixed(1)}%`, px0, py0+10);
+
+      ctx.restore();
+    }
+
+    function drawCalibration(){
+      const ctx = ensureCanvas(ui.cvCal);
+      if(!ctx) return;
+      clear(ctx);
+      axes(ctx, 'Calibration Plot');
+
+      const c = ctx.canvas;
+      ctx.save();
+
+      const pts = lab.cal.points || [];
+      if(pts.length === 0){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText('No calibration data.', 12, 52);
+        ctx.restore();
+        return;
+      }
+
+      const xs = pts.map(p=>p.x);
+      const ys = pts.map(p=>p.y);
+      const xmin = Math.min(...xs), xmax = Math.max(...xs);
+      const ymin = Math.min(...ys), ymax = Math.max(...ys);
+
+      const px0=30, px1=c.width-20;
+      const py0=50, py1=c.height-20;
+
+      // axes
+      ctx.strokeStyle='rgba(255,255,255,.15)';
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(px0, py1);
+      ctx.lineTo(px1, py1);
+      ctx.moveTo(px0, py1);
+      ctx.lineTo(px0, py0);
+      ctx.stroke();
+
+      // points
+      ctx.fillStyle='rgba(123,221,255,.85)';
+      for(const p of pts){
+        const x = map(p.x, xmin, xmax, px0, px1);
+        const y = map(p.y, ymin, ymax, py1, py0);
+        ctx.beginPath();
+        ctx.arc(x,y,4,0,Math.PI*2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle='rgba(255,255,255,.65)';
+      ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillText(`n=${pts.length}`, px0, py0+12);
+
+      ctx.restore();
+    }
+
+    function drawPhotonTrace(){
+      const ctx = ensureCanvas(ui.cvPhoton);
+      if(!ctx) return;
+      clear(ctx);
+      axes(ctx, 'Photon Trace (toy)');
+
+      const c = ctx.canvas;
+      ctx.save();
+
+      // draw a rolling squiggle based on pressure + nbar
+      const px0=20, px1=c.width-20;
+      const py0=48, py1=c.height-20;
+
+      const N=200;
+      ctx.strokeStyle='rgba(123,221,255,.55)';
+      ctx.lineWidth=2;
+
+      ctx.beginPath();
+      for(let i=0;i<N;i++){
+        const x = map(i,0,N-1,px0,px1);
+        const t = lab.t + i*0.02;
+        const p = Math.log10(lab.pressure);
+        const yBase = 0.55 + 0.18*Math.sin(2*Math.PI*0.22*t) + 0.10*Math.sin(2*Math.PI*0.07*t + 1.4);
+        const yNoise = (0.06 + 0.02*lab.nbar) * randn() * 0.12;
+        const y = clamp(yBase + yNoise + 0.04*(p+10), 0.08, 0.92);
+        const yy = map(y,0,1,py1,py0);
+        if(i===0) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);
+      }
+      ctx.stroke();
+
+      ctx.fillStyle='rgba(255,255,255,.65)';
+      ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillText(`pressure=${lab.pressure.toExponential(2)} mbar`, px0, py0+12);
+
+      ctx.restore();
+    }
+
+    /********************
+     * Tables
+     ********************/
+    function renderDistributionTable(outcomes){
+      ui.tblOut.innerHTML = '';
+      const top = outcomes.slice(0, 10);
+      for(const o of top){
+        const tr = document.createElement('tr');
+        const tdBits = document.createElement('td');
+        const tdP = document.createElement('td');
+        const tdN = document.createElement('td');
+        tdBits.textContent = o.bits;
+        tdP.textContent = o.p.toFixed(4);
+        tdN.textContent = o.c.toString();
+        tr.appendChild(tdBits);
+        tr.appendChild(tdP);
+        tr.appendChild(tdN);
+        ui.tblOut.appendChild(tr);
+      }
+    }
+
+    function setCalRows(rows){
+      ui.tblCal.innerHTML = '';
+      for(const r of rows){
+        const tr = document.createElement('tr');
+        for(const key of ['type','x','y','note']){
+          const td = document.createElement('td');
+          td.textContent = (r[key] ?? '').toString();
+          tr.appendChild(td);
+        }
+        ui.tblCal.appendChild(tr);
+      }
+    }
+
+    /********************
+     * UI bindings
+     ********************/
+    function setReady(ok, msg){
+      ui.dotReady.style.background = ok ? 'var(--ok)' : 'var(--warn)';
+      ui.dotReady.style.boxShadow = ok ? '0 0 10px rgba(47,227,154,.35)' : '0 0 10px rgba(255,210,123,.35)';
+      ui.readyTxt.textContent = msg;
+    }
+
+    function syncText(){
+      ui.txtPump.textContent = String(Math.round(lab.pumpSpeed*100));
+      ui.txtOvenSet.textContent = String(Math.round(lab.ovenSet*100));
+      ui.txtLLR.textContent = (ui.rngLLR.valueAsNumber || 0).toFixed(1);
+      ui.txtCamGain.textContent = (lab.cam.gain).toFixed(1);
+      ui.txtCamSigma.textContent = (lab.cam.sigma).toFixed(1);
+
+      ui.kvPressure.textContent = `${lab.pressure.toExponential(2)} mbar`;
+      ui.kvOven.textContent = `${lab.ovenTempC.toFixed(0)} °C`;
+      ui.kvRF.textContent = `${lab.rf.fMHz.toFixed(1)} MHz @ ${lab.rf.vpp.toFixed(0)} Vpp`;
+      ui.kvWz.textContent = `${estimateWz().toFixed(2)} MHz`;
+      ui.kvIons.textContent = `${lab.ionsLoaded}`;
+      ui.kvNbar.textContent = `${lab.nbar.toFixed(2)}`;
+    }
+
+    function laserStep(dt){
+      // random walk error, pulled to 0 if locked
+      const keys = ['L369','L399','L935','L355','L638'];
+      for(const k of keys){
+        const L = lab.lasers[k];
+        const walk = 0.10 * randn() * Math.sqrt(dt);
+        L.err += walk;
+        const pull = L.lock ? 1.5 : 0.10;
+        L.err += (-L.err) * (1 - Math.exp(-pull*dt));
+        // occasional lock loss if unlocked
+        if(!L.lock && Math.random() < 0.02*dt){
+          // stay unlocked; bigger drift
+          L.err += 0.6*randn();
+        }
+      }
+
+      // UI text + sparks
+      function upd(k, txt, sp){
+        const L = lab.lasers[k];
+        txt.textContent = `${L.err.toFixed(3)}`;
+        const a = Math.abs(L.err);
+        const ok = L.lock && a < 0.35;
+        const warn = L.lock && a >= 0.35 && a < 0.8;
+        const bad = !L.lock || a >= 0.8;
+        sp.classList.toggle('ok', ok);
+        sp.classList.toggle('warn', warn);
+        sp.classList.toggle('bad', bad);
+      }
+      upd('L369', ui.txtL369Err, ui.spL369);
+      upd('L399', ui.txtL399Err, ui.spL399);
+      upd('L935', ui.txtL935Err, ui.spL935);
+      upd('L355', ui.txtL355Err, ui.spL355);
+      upd('L638', ui.txtL638Err, ui.spL638);
+    }
+
+    function bindControls(){
+      // sliders
+      ui.rngPump.addEventListener('input', () => { lab.pumpSpeed = ui.rngPump.valueAsNumber/100; syncText(); });
+      ui.rngOven.addEventListener('input', () => { lab.ovenSet = ui.rngOven.valueAsNumber/100; syncText(); });
+
+      // trap numbers
+      function syncTrap(){
+        lab.rf.fMHz = ui.numRFf.valueAsNumber || lab.rf.fMHz;
+        lab.rf.vpp = ui.numRFv.valueAsNumber || lab.rf.vpp;
+        lab.trap.wzMHz = ui.numWz.valueAsNumber || lab.trap.wzMHz;
+        lab.trap.wrMHz = ui.numWr.valueAsNumber || lab.trap.wrMHz;
+        lab.trap.BmT = ui.numB.valueAsNumber || lab.trap.BmT;
+        syncText();
+      }
+      [ui.numRFf, ui.numRFv, ui.numWz, ui.numWr, ui.numB].forEach(el => el.addEventListener('input', syncTrap));
+
+      // readout
+      ui.rngLLR.addEventListener('input', ()=>{ ui.txtLLR.textContent = (ui.rngLLR.valueAsNumber||0).toFixed(1); });
+
+      // camera
+      ui.selCamMode.addEventListener('change', ()=>{ lab.cam.mode = ui.selCamMode.value; });
+      ui.rngCamGain.addEventListener('input', ()=>{ lab.cam.gain = ui.rngCamGain.valueAsNumber; ui.txtCamGain.textContent = lab.cam.gain.toFixed(1); });
+      ui.rngCamSigma.addEventListener('input', ()=>{ lab.cam.sigma = ui.rngCamSigma.valueAsNumber; ui.txtCamSigma.textContent = lab.cam.sigma.toFixed(1); });
+      ui.numCamScale.addEventListener('input', ()=>{ lab.cam.scaleUmPerPx = ui.numCamScale.valueAsNumber || 1.2; });
+      ui.numCamROI.addEventListener('input', ()=>{ lab.cam.roiHalf = ui.numCamROI.valueAsNumber || 14; });
+      ui.selCamOverlay.addEventListener('change', ()=>{ lab.cam.overlay = ui.selCamOverlay.value; });
+
+      // vacuum buttons
+      ui.btnPump.addEventListener('click', ()=>{ lab.pumpOn = !lab.pumpOn; log(`Pump ${lab.pumpOn?'ON':'OFF'}`); });
+      ui.btnBake.addEventListener('click', ()=>{ lab.bakeOn = !lab.bakeOn; log(`Bake ${lab.bakeOn?'ON':'OFF'}`); });
+      ui.btnOven.addEventListener('click', ()=>{ lab.ovenOn = !lab.ovenOn; log(`Oven ${lab.ovenOn?'ON':'OFF'}`); });
+      ui.btnLoad.addEventListener('click', ()=>{
+        const n = clamp(ui.numQ.valueAsNumber || 4, 1, 16)|0;
+        lab.ionsLoaded = n;
+        lab.ions = makeIonChain(n);
+        log(`Loaded ion chain: N=${n}`);
+      });
+      ui.btnCool.addEventListener('click', ()=>{
+        lab.coolingOn = !lab.coolingOn;
+        log(`Cooling ${lab.coolingOn?'ON':'OFF'}`);
+      });
+      ui.btnReset.addEventListener('click', ()=>{
+        Object.assign(lab, {
+          pressure: 1e-9,
+          ovenTempC: 25,
+          ionsLoaded: 0,
+          ions: [],
+          nbar: 8.0,
+          readout: { lastBrightCounts:[], lastDarkCounts:[], lastSpam:null },
+          cal: { points:[], tableRows:[] },
+          cam: { ...lab.cam, lastImage:null, lastCounts:null, centroid:null },
+        });
+        ui.tblOut.innerHTML = '';
+        ui.tblCal.innerHTML = '';
+        log('Reset.');
+      });
+
+      // program templates
+      ui.selTemplate.addEventListener('change', ()=>{
+        ui.txtProgram.value = templates[ui.selTemplate.value] || '';
+      });
+
+      ui.btnCompile.addEventListener('click', ()=>{
         try{
-          const expr = str.replace(/pi/g, "Math.PI");
-          // eslint-disable-next-line no-new-func
-          return Function("return ("+expr+")")();
+          const text = ui.txtProgram.value || '';
+          const ops = compileProgram(text);
+          lab.program.text = text;
+          lab.program.compiled = ops;
+          lab.program.lastError = null;
+          drawPulseTimeline(ops);
+          setReady(true, 'COMPILED');
+          log(`Compiled ${ops.length} ops.`);
         }catch(e){
-          return dflt;
+          lab.program.lastError = e;
+          setReady(false, 'ERROR');
+          log(`Compile error: ${e.message}`);
         }
+      });
+
+      ui.btnRun.addEventListener('click', ()=>{
+        try{
+          // compile if needed
+          const text = ui.txtProgram.value || '';
+          const ops = compileProgram(text);
+          lab.program.text = text;
+          lab.program.compiled = ops;
+          lab.program.lastError = null;
+
+          // run
+          runShots(ops);
+          setReady(true, 'RAN');
+        }catch(e){
+          setReady(false, 'ERROR');
+          log(`Run error: ${e.message}`);
+        }
+      });
+
+      // lasers
+      function syncLocks(){
+        lab.lasers.L369.lock = ui.chkL369.checked;
+        lab.lasers.L399.lock = ui.chkL399.checked;
+        lab.lasers.L935.lock = ui.chkL935.checked;
+        lab.lasers.L355.lock = ui.chkL355.checked;
+        lab.lasers.L638.lock = ui.chkL638.checked;
       }
-      return parseFloat(s);
-    };
+      [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el.addEventListener('change', ()=>{ syncLocks(); }));
 
-    // build op object
-    if (cmd==="PUMP_DOWN"){
-      const dur = parseTime(kv.t || kv.time || "60s", 60);
-      ops.push({cmd, t0:tCursor, dt:dur, kv});
-      tCursor += dur;
-      continue;
-    }
-    if (cmd==="OVEN"){
-      const dur = parseTime(kv.t || kv.time || "30s", 30);
-      const tempC = parseFloat(kv.temp||kv.c||kv.set||"450");
-      ops.push({cmd, t0:tCursor, dt:dur, kv:{tempC}});
-      tCursor += dur;
-      continue;
-    }
-    if (cmd==="PI"){ // photoionization load
-      const dur = parseTime(kv.t||"3s", 3);
-      const ions = parseInt(kv.ions||kv.n||"2",10);
-      ops.push({cmd, t0:tCursor, dt:dur, kv:{ions}});
-      tCursor += dur;
-      continue;
-    }
-    if (cmd==="DOPPLER"){
-      const dur = parseTime(kv.t||"2ms", 0.002);
-      const det = kv.det || kv.delta || "-10MHz";
-      ops.push({cmd, t0:tCursor, dt:dur, kv:{det}});
-      tCursor += dur;
-      continue;
-    }
-    if (cmd==="SIDEBAND"){
-      const dur = parseTime(kv.t||"5ms", 0.005);
-      ops.push({cmd, t0:tCursor, dt:dur, kv:{}});
-      tCursor += dur;
-      continue;
-    }
-    if (cmd==="OPTPUMP"){
-      const dur = parseTime(kv.t||"20us", 20e-6);
-      ops.push({cmd, t0:tCursor, dt:dur, kv:{}});
-      tCursor += dur;
-      continue;
-    }
-    if (cmd==="RAMAN"){
-      const dur = parseTime(kv.t||"5us", 5e-6);
-      const q = parseInt(kv.q||kv.ion||kv.i||"0",10);
-      const axis = (kv.axis||"X").toUpperCase();
-      const ang = parseAngle(kv.angle||kv.theta||"pi/2", Math.PI/2);
-      ops.push({cmd, t0:tCursor, dt:dur, kv:{q,axis,ang}});
-      tCursor += dur;
-      continue;
-    }
-    if (cmd==="MS"){
-      const dur = parseTime(kv.t||"180us", 180e-6);
-      const q0 = parseInt(kv.q0||kv.a||kv.i||"0",10);
-      const q1 = parseInt(kv.q1||kv.b||kv.j||"1",10);
-      const theta = parseAngle(kv.theta||kv.angle||"pi/2", Math.PI/2);
-      const delta = kv.delta||kv.det||"10kHz";
-      ops.push({cmd, t0:tCursor, dt:dur, kv:{q0,q1,theta,delta}});
-      tCursor += dur;
-      continue;
-    }
-    if (cmd==="VZ"){
-      const dur = parseTime(kv.t||"0us", 0);
-      const q = parseInt(kv.q||"0",10);
-      const ang = parseAngle(kv.angle||kv.theta||"pi/2", Math.PI/2);
-      ops.push({cmd, t0:tCursor, dt:dur, kv:{q,ang}});
-      tCursor += dur;
-      continue;
-    }
-    if (cmd==="MEASURE"){
-      const dur = parseTime(kv.t||"300us", 300e-6);
-      ops.push({cmd, t0:tCursor, dt:dur, kv:{}});
-      tCursor += dur;
-      continue;
+      ui.btnLockAll.addEventListener('click', ()=>{
+        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el.checked=true);
+        syncLocks();
+        log('Lasers: lock all.');
+      });
+      ui.btnUnlockAll.addEventListener('click', ()=>{
+        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el.checked=false);
+        syncLocks();
+        log('Lasers: unlock all.');
+      });
+      ui.btnKickLasers.addEventListener('click', ()=>{
+        for(const k of ['L369','L399','L935','L355','L638']){
+          lab.lasers[k].err += 0.9*randn();
+        }
+        log('Lasers: kick.');
+      });
+
+      // micromotion
+      function syncMM(){
+        lab.mm.compX = ui.numCompX.valueAsNumber || 0;
+        lab.mm.compY = ui.numCompY.valueAsNumber || 0;
+      }
+      ui.numCompX.addEventListener('input', syncMM);
+      ui.numCompY.addEventListener('input', syncMM);
+      ui.btnAutoMM.addEventListener('click', ()=>{
+        // simple gradient-ish step toward 0
+        lab.mm.compX *= 0.55;
+        lab.mm.compY *= 0.55;
+        ui.numCompX.value = lab.mm.compX.toFixed(2);
+        ui.numCompY.value = lab.mm.compY.toFixed(2);
+        log('Micromotion: auto step toward optimum.');
+      });
+
+      // base select
+      ui.selBaseP.addEventListener('change', ()=>{ lab.baseP = parseFloat(ui.selBaseP.value); });
+
+      // camera overlay init
+      lab.cam.overlay = ui.selCamOverlay.value;
+
+      // init template text
+      ui.txtProgram.value = templates[ui.selTemplate.value] || templates.ramsey;
+      syncLocks();
+      syncTrap();
+      syncMM();
+      syncText();
     }
 
-    // convenient logical ops (compile to pulses)
-    if (cmd==="H" || cmd==="S" || cmd==="SDG" || cmd==="X" || cmd==="Y" || cmd==="Z"){
-      const q = parseInt(parts[1]||"0",10);
-      ops.push({cmd, t0:tCursor, dt:0, kv:{q}});
-      continue;
-    }
-    if (cmd==="CX" || cmd==="CNOT"){
-      const c = parseInt(parts[1]||"0",10);
-      const t = parseInt(parts[2]||"1",10);
-      ops.push({cmd:"CX", t0:tCursor, dt:0, kv:{c,t}});
-      continue;
-    }
-    if (cmd==="CZ"){
-      const a = parseInt(parts[1]||"0",10);
-      const b = parseInt(parts[2]||"1",10);
-      ops.push({cmd:"CZ", t0:tCursor, dt:0, kv:{a,b}});
-      continue;
-    }
-    throw new Error(`Line ${ln+1}: Unknown command "${cmd}"`);
-  }
-  return ops;
-}
+    /********************
+     * Main loop
+     ********************/
+    function tick(){
+      const t = nowMs();
+      const dt = Math.min(0.05, (t - lab.last)/1000);
+      lab.last = t;
+      lab.t += dt;
 
-// ---------- Templates ----------
-function templateBell(){
-  return `# Bell state in 171Yb+ (pulse-level)
-# End-to-end: pumpdown -> oven -> photoionization -> cooling -> optical pump -> MS -> phase corr -> measure
-PUMP_DOWN t=40s
-OVEN temp=450 t=20s
-PI ions=2 t=2s
-DOPPLER t=2ms det=-10MHz
-SIDEBAND t=5ms
-OPTPUMP t=20us
-# Mølmer–Sørensen entangling gate (max entangling); produces (|00> - i|11>)/sqrt(2)
-MS q0=0 q1=1 theta=pi/2 delta=10kHz t=180us
-# Virtual Z: apply S on one qubit to remove the -i phase on |11> (virtual frame update)
-VZ q=0 angle=pi/2
-MEASURE t=300us`;
-}
-function templateGHZ(n){
-  // build chain entanglement with MS(0,k) then local phase
-  let s = `# GHZ on ${n} ions (Clifford compiled)\n`;
-  s += `OPTPUMP t=20us\n`;
-  // Prepare |+000..> via Ry(pi/2) on qubit 0 (equiv to H up to phase)
-  s += `RAMAN q=0 axis=Y angle=pi/2 t=5us\n`;
-  for (let k=1;k<n;k++){
-    s += `MS q0=0 q1=${k} theta=pi/2 delta=10kHz t=180us\n`;
-  }
-  // phase corr
-  s += `VZ q=0 angle=pi/2\nMEASURE t=300us`;
-  return s;
-}
-function templateBV(n){
-  // Use last qubit as ancilla; secret string hardcoded
-  const data = n-1;
-  const secret = [];
-  for (let i=0;i<data;i++) secret.push(Math.random()<0.5?0:1);
-  let s = `# Bernstein–Vazirani (Clifford), n=${n} (data=${data}, ancilla=${n-1})\n`;
-  s += `# secret a = ${secret.join("")}\n`;
-  s += `OPTPUMP t=20us\n`;
-  // Prepare ancilla in |1> then H => |->; prepare all data in |+>
-  s += `RAMAN q=${n-1} axis=X angle=pi t=5us\n`; // X pi
-  s += `H ${n-1}\n`;
-  for (let i=0;i<data;i++){
-    s += `H ${i}\n`;
-  }
-  // Oracle: for each ai=1 do CNOT i -> ancilla
-  for (let i=0;i<data;i++){
-    if (secret[i]===1) s += `CX ${i} ${n-1}\n`;
-  }
-  // Hadamards back on data, measure data
-  for (let i=0;i<data;i++){
-    s += `H ${i}\n`;
-  }
-  s += `MEASURE t=300us`;
-  return s;
-}
-function templateRandCliff(n){
-  let s = `# Random Clifford benchmark (n=${n})\nOPTPUMP t=20us\n`;
-  const gates = ["H","S","SDG","X","Z","Y"];
-  for (let k=0;k<40;k++){
-    const g = choice(gates);
-    const q = Math.floor(Math.random()*n);
-    if (g==="H"||g==="S"||g==="SDG"||g==="X"||g==="Y"||g==="Z"){
-      s += `${g} ${q}\n`;
+      pressureUpdate(dt);
+      ovenUpdate(dt);
+      ionsUpdate(dt);
+      laserStep(dt);
+
+      // update ready status based on "reasonable" conditions
+      const okVac = lab.pressure < 2.5e-10;
+      const okIons = lab.ionsLoaded > 0;
+      if(okVac && okIons) setReady(true, 'READY');
+      else setReady(false, okVac ? 'NO IONS' : 'VAC');
+
+      syncText();
+
+      // draw
+      drawVacuum();
+      drawIons();
+      drawPulseTimeline(lab.program.compiled);
+      drawReadout(lab.readout.lastBrightCounts, lab.readout.lastDarkCounts);
+      drawCamera();
+      drawPhotonTrace();
+      drawLaserDiag();
+      drawMM();
+      drawCalibration();
+
+      requestAnimationFrame(tick);
     }
-    if (Math.random()<0.25 && n>=2){
-      const a = Math.floor(Math.random()*n);
-      let b = Math.floor(Math.random()*n);
-      if (b===a) b = (b+1)%n;
-      s += `MS q0=${a} q1=${b} theta=pi/2 t=180us\n`;
-    }
-  }
-  s += `MEASURE t=300us`;
-  return s;
-}
 
-// ---------- Experiment runner ----------
-function runShots(programOps, cfg, log){
-  const n = cfg.n;
-  const shots = cfg.shots;
-  const dist = new Map();
-  const brightHist = []; // record total counts per ion? We'll accumulate global histogram for one ion (ion0) for display
-  const darkHist = [];
-  const pulseRects = []; // for drawing
-  const setupCmds = new Set(["PUMP_DOWN","OVEN","PI"]);
-  const perShotOps = programOps.filter(op => !setupCmds.has(op.cmd.toUpperCase()));
-
-  let totalTime = 0;
-  for (const op of perShotOps){
-    totalTime += op.dt;
-  }
-
-  // Precompute timeline rectangles for display
-  for (const op of programOps){
-    const tag = op.cmd;
-    pulseRects.push({
-      t0: op.t0,
-      t1: op.t0 + op.dt,
-      tag,
-      detail: JSON.stringify(op.kv)
+    // Resize handler
+    window.addEventListener('resize', ()=>{
+      [
+        ui.cvEnv, ui.cvIons, ui.cvPulse, ui.cvReadout, ui.cvDist, ui.cvCam,
+        ui.cvPhoton, ui.cvMS, ui.cvLaser, ui.cvMM, ui.cvCal
+      ].forEach(ensureCanvas);
     });
-  }
 
-  // Run shots
-  const detT = cfg.detTimeUs * 1e-6;
-  const brightMean = cfg.brightMean;
-  const darkMean = cfg.darkMean;
-  const thresh = cfg.thresh;
-
-  // Ion motion initial (from lab)
-  // We'll update per-shot locally (not permanently) to mimic re-cooling each shot in program.
-  const T_D = dopplerLimitTemp_Yb();
-  const omegaZ = TAU * (cfg.wzMHz * 1e6);
-  const nbarDoppler = nbarFromTemp(T_D, omegaZ);
-  const nbarSB = 0.05;
-
-  // Vacuum collision model: p_coll = 1-exp(-t_total/tau); tau scales ~1/P
-  const P = cfg.pressureTorr;
-  const tauCollAt1e11 = 3600*6; // 6 hours at 1e-11 Torr (toy)
-  const tauColl = tauCollAt1e11 * (1e-11 / Math.max(1e-13, P));
-
-  const activeQ = [...Array(n).keys()];
-
-  for (let s=0;s<shots;s++){
-    // collision?
-    if (Math.random() < (1 - Math.exp(-totalTime / tauColl))){
-      // collision spoils shot: random outcome
-      const bits = randomBitstring(n);
-      dist.set(bits, (dist.get(bits)||0)+1);
-      continue;
-    }
-
-    let nbar = cfg.nbarInit; // start from lab cooled state (or will be overwritten by program commands)
-    const tab = new Stabilizer(n);
-
-    // Execute program
-    for (const op of perShotOps){
-      const cmd = op.cmd.toUpperCase();
-      const dt = op.dt;
-
-      // continuous dephasing during any time dt (applies to all qubits)
-      applyT2Dephasing(tab, activeQ, dt, cfg.T2);
-
-      // motional heating during dt
-      nbar += cfg.heatingRate * dt; // quanta/sec * sec
-
-      if (cmd==="PUMP_DOWN" || cmd==="OVEN" || cmd==="PI"){
-        // lab-only: doesn't affect qubits per shot
-        continue;
-      }
-      if (cmd==="DOPPLER"){
-        // approach Doppler limit
-        const tau = 0.0006; // 0.6 ms time constant (toy)
-        const t = dt;
-        nbar = nbarDoppler + (nbar - nbarDoppler)*Math.exp(-t/tau);
-        continue;
-      }
-      if (cmd==="SIDEBAND"){
-        const tau = 0.002; // 2 ms
-        const t = dt;
-        nbar = nbarSB + (nbar - nbarSB)*Math.exp(-t/tau);
-        continue;
-      }
-      if (cmd==="OPTPUMP"){
-        // reset internal state to |0...0> (perfect in model; SPAM handled at readout)
-        tab.resetToZero();
-        // optical pumping also cools slightly (toy)
-        nbar = Math.max(nbarSB, nbar*0.95);
-        continue;
-      }
-      if (cmd==="H"){ tab.hGate(op.kv.q); continue; }
-      if (cmd==="S"){ tab.sGate(op.kv.q); continue; }
-      if (cmd==="SDG"){ tab.sdgGate(op.kv.q); continue; }
-      if (cmd==="X"){ tab.xGate(op.kv.q); continue; }
-      if (cmd==="Y"){ tab.yGate(op.kv.q); continue; }
-      if (cmd==="Z"){ tab.zGate(op.kv.q); continue; }
-      if (cmd==="CX"){
-        tab.cnot(op.kv.c, op.kv.t);
-        continue;
-      }
-      if (cmd==="CZ"){
-        const a=op.kv.a, b=op.kv.b;
-        tab.hGate(b); tab.cnot(a,b); tab.hGate(b);
-        continue;
-      }
-
-      if (cmd==="RAMAN"){
-        const {q,axis,ang} = op.kv;
-        // Apply ideal (rounded) Clifford
-        if (axis==="X") gate_Rx(tab,q,ang, ()=>{});
-        else if (axis==="Y") gate_Ry(tab,q,ang, ()=>{});
-        else gate_Rz(tab,q,ang, ()=>{});
-        // Apply stochastic gate error
-        applyDepolarizing1Q(tab,q,cfg.p1);
-        continue;
-      }
-      if (cmd==="VZ"){
-        gate_Rz(tab, op.kv.q, op.kv.ang, ()=>{});
-        // virtual Z is software phase update; we treat as zero-time perfect gate by default
-        continue;
-      }
-      if (cmd==="MS"){
-        const {q0,q1,theta} = op.kv;
-        gate_MS(tab,q0,q1,theta, ()=>{});
-        // Two-qubit gate depolarizing + motional error term
-        const pMot = clamp(cfg.msMotionCoeff * Math.max(0, nbar), 0, 0.25);
-        applyDepolarizing2Q(tab,q0,q1, clamp(cfg.p2 + pMot, 0, 0.5));
-        continue;
-      }
-      if (cmd==="MEASURE"){
-        // perform measurement at end; break after measurement
-        break;
-      }
-    }
-
-    // Readout: measure all ions; also simulate photon counts for ion0 histogram
-    const idealBits = [];
-    const measCounts = [];
-    for (let q=0;q<n;q++){
-      const bit = tab.measureZ(q); // collapses
-      idealBits.push(bit);
-      const lam = (bit===1) ? brightMean : darkMean;
-      const c = poisson(lam);
-      measCounts.push(c);
-    }
-    // threshold discriminates each ion
-    const observed = idealBits.map((b,i)=>{
-      const bHat = (measCounts[i] >= thresh) ? 1 : 0;
-      return bHat;
-    });
-    const bits = observed.slice().reverse().join(""); // MSB left for display
-    dist.set(bits, (dist.get(bits)||0)+1);
-    // store per-ion0 hist
-    if (idealBits[0]===1) brightHist.push(measCounts[0]); else darkHist.push(measCounts[0]);
-  }
-
-  return {dist, pulseRects, brightHist, darkHist};
-}
-
-function randomBitstring(n){
-  let s="";
-  for (let i=0;i<n;i++) s = (Math.random()<0.5?"0":"1")+s;
-  return s;
-}
-
-// ---------- UI wiring ----------
-const el = (id)=>document.getElementById(id);
-const logEl = el("log");
-function log(msg){
-  const t = new Date().toLocaleTimeString();
-  logEl.textContent += `[${t}] ${msg}\n`;
-  logEl.scrollTop = logEl.scrollHeight;
-}
-
-const ui = {
-  dotReady: el("dotReady"),
-  readyTxt: el("readyTxt"),
-  kvPressure: el("kvPressure"),
-  kvOven: el("kvOven"),
-  kvRF: el("kvRF"),
-  kvWz: el("kvWz"),
-  kvIons: el("kvIons"),
-  kvNbar: el("kvNbar"),
-  selBaseP: el("selBaseP"),
-  rngPump: el("rngPump"),
-  txtPump: el("txtPump"),
-  rngOven: el("rngOven"),
-  txtOvenSet: el("txtOvenSet"),
-  selPI: el("selPI"),
-  btnPump: el("btnPump"),
-  btnBake: el("btnBake"),
-  btnOven: el("btnOven"),
-  btnLoad: el("btnLoad"),
-  btnCool: el("btnCool"),
-  numQ: el("numQ"),
-  numRFf: el("numRFf"),
-  numRFv: el("numRFv"),
-  numWz: el("numWz"),
-  numWr: el("numWr"),
-  numB: el("numB"),
-  numHeat: el("numHeat"),
-  numT2: el("numT2"),
-  numP1: el("numP1"),
-  numP2: el("numP2"),
-  selTemplate: el("selTemplate"),
-  txtProgram: el("txtProgram"),
-  numShots: el("numShots"),
-  btnCompile: el("btnCompile"),
-  btnRun: el("btnRun"),
-  btnReset: el("btnReset"),
-  cvEnv: el("cvEnv"),
-  cvIons: el("cvIons"),
-  cvPulse: el("cvPulse"),
-  cvReadout: el("cvReadout"),
-  tblOut: el("tblOut"),
-  numDetT: el("numDetT"),
-  numBright: el("numBright"),
-  numDark: el("numDark"),
-  numThresh: el("numThresh"),
-};
-
-// ---------- Lab state machine (continuous visuals) ----------
-const lab = {
-  baseP: 1e-11,
-  pumpSpeed: 1.2,
-  pumping: false,
-  baking: false,
-  bakeBoost: 1.0,
-  pressure: 2e-8,
-  ovenSetC: 450,
-  ovenC: 25,
-  ovenOn: false,
-  PI: false,
-  Ntarget: 2,
-  Nloaded: 0,
-  loaded: false,
-  dopplerDone: false,
-  sidebandDone: false,
-  nbar: 25,
-  // trap
-  rfMHz: 37,
-  rfVpp: 200,
-  wzMHz: 0.20,
-  wrMHz: 1.0,
-  Bgauss: 6,
-  // heating and T2 are in cfg UI
-  t: 0,
-  ionPositions: [],
-  envTrace: [], // time series
-};
-
-function resetLab(){
-  lab.baseP = parseFloat(ui.selBaseP.value);
-  lab.pumpSpeed = parseFloat(ui.rngPump.value);
-  lab.pumping = false;
-  lab.baking = false;
-  lab.bakeBoost = 1.0;
-  lab.pressure = 2e-8;
-  lab.ovenSetC = parseFloat(ui.rngOven.value);
-  lab.ovenC = 25;
-  lab.ovenOn = false;
-  lab.PI = (ui.selPI.value==="on");
-  lab.Ntarget = clamp(parseInt(ui.numQ.value,10)||2,1,16);
-  lab.Nloaded = 0;
-  lab.loaded = false;
-  lab.dopplerDone = false;
-  lab.sidebandDone = false;
-  lab.nbar = 25;
-  lab.rfMHz = parseFloat(ui.numRFf.value);
-  lab.rfVpp = parseFloat(ui.numRFv.value);
-  lab.wzMHz = parseFloat(ui.numWz.value);
-  lab.wrMHz = parseFloat(ui.numWr.value);
-  lab.Bgauss = parseFloat(ui.numB.value);
-  lab.t = 0;
-  lab.envTrace = [];
-  updateIonPositions();
-  logEl.textContent = "";
-  log("Lab reset.");
-}
-
-function updateIonPositions(){
-  const N = lab.Ntarget;
-  const omegaZ = TAU * (lab.wzMHz * 1e6);
-  const z = solveIonChainPositions(N, omegaZ);
-  lab.ionPositions = z;
-}
-
-function isLabReady(){
-  return lab.pressure <= Math.max(3*lab.baseP, 3e-11) && lab.ovenC>=lab.ovenSetC-20 && lab.loaded && lab.sidebandDone;
-}
-
-function updateSummary(){
-  ui.txtPump.textContent = fmt(lab.pumpSpeed,1)+"×";
-  ui.txtOvenSet.textContent = Math.round(lab.ovenSetC)+"°C";
-  ui.kvPressure.textContent = fmt(lab.pressure,2)+" Torr";
-  ui.kvOven.textContent = Math.round(lab.ovenC)+" °C";
-  ui.kvRF.textContent = `${fmt(lab.rfMHz,1)} MHz @ ${Math.round(lab.rfVpp)} Vpp`;
-  ui.kvWz.textContent = `${fmt(lab.wzMHz,2)} MHz`;
-  ui.kvIons.textContent = `${lab.Nloaded}/${lab.Ntarget}`;
-  ui.kvNbar.textContent = fmt(lab.nbar,2);
-  const ready = isLabReady();
-  ui.dotReady.style.background = ready ? "var(--ok)" : (lab.loaded ? "var(--warn)" : "var(--bad)");
-  ui.readyTxt.textContent = ready ? "Ready for shots" : (lab.loaded ? "Needs cooling/UHV" : "Not ready");
-}
-
-function stepLab(dt){
-  lab.t += dt;
-
-  // pumpdown: exponential approach to base pressure
-  if (lab.pumping){
-    const tau = 45 / lab.pumpSpeed; // seconds
-    const target = lab.baseP * (lab.baking ? 0.6 : 1.0);
-    lab.pressure = target + (lab.pressure - target) * Math.exp(-dt/tau);
-  } else {
-    // slow rise if pump off (outgassing)
-    lab.pressure *= Math.exp(dt / 6000);
-    lab.pressure = Math.min(lab.pressure, 5e-7);
-  }
-
-  // bakeout reduces outgassing effectively
-  if (lab.baking){
-    lab.bakeBoost = Math.max(0.6, lab.bakeBoost * Math.exp(-dt/800));
-  }
-
-  // oven thermal dynamics
-  const tauOven = 18; // seconds
-  const targetT = lab.ovenOn ? lab.ovenSetC : 25;
-  lab.ovenC = targetT + (lab.ovenC - targetT) * Math.exp(-dt/tauOven);
-
-  // loading probability when PI and oven hot and trap on
-  lab.PI = (ui.selPI.value==="on");
-  if (lab.PI && lab.ovenC > lab.ovenSetC-10 && lab.pumping && lab.pressure < 5e-10){
-    // simplistic flux model: increases with temperature and decreases with pressure
-    const tempFactor = Math.exp((lab.ovenC-350)/80);
-    const pressFactor = clamp(5e-10 / lab.pressure, 0.1, 30);
-    const rate = 0.15 * tempFactor * (pressFactor/5); // ions/sec
-    const p = 1 - Math.exp(-rate*dt);
-    if (Math.random() < p && lab.Nloaded < lab.Ntarget){
-      lab.Nloaded++;
-      log(`Ion loaded: ${lab.Nloaded}/${lab.Ntarget}`);
-      if (lab.Nloaded === lab.Ntarget){
-        lab.loaded = true;
-        log("Target ion chain loaded. Turn off PI to avoid overloading.");
-      }
-      updateIonPositions();
-    }
-  }
-
-  // simple cooling status
-  // motional heating in the idle lab
-  const heatRate = parseFloat(ui.numHeat.value)||0;
-  lab.nbar += heatRate * dt; // quanta/s * s
-  lab.nbar = Math.min(lab.nbar, 2000);
-
-  // store trace every ~0.2s
-  if (lab.envTrace.length===0 || (lab.t - lab.envTrace[lab.envTrace.length-1].t) > 0.2){
-    lab.envTrace.push({t:lab.t, p:lab.pressure, oven:lab.ovenC});
-    if (lab.envTrace.length>500) lab.envTrace.shift();
-  }
-
-  updateSummary();
-}
-
-ui.btnPump.addEventListener("click", ()=>{
-  lab.pumping = !lab.pumping;
-  log(lab.pumping ? "Pumps ON (pumpdown started)." : "Pumps OFF.");
-});
-ui.btnBake.addEventListener("click", ()=>{
-  lab.baking = !lab.baking;
-  log(lab.baking ? "Bakeout ON (outgassing reduced over time)." : "Bakeout OFF.");
-});
-ui.btnOven.addEventListener("click", ()=>{
-  lab.ovenOn = !lab.ovenOn;
-  log(lab.ovenOn ? `Oven ON → ${Math.round(lab.ovenSetC)}°C` : "Oven OFF → room temperature");
-});
-ui.btnLoad.addEventListener("click", ()=>{
-  if (!lab.PI){
-    log("Turn PI ON (399+369) first to load ions.");
-    return;
-  }
-  log("Loading is stochastic; wait for bright spots (simulated).");
-});
-ui.btnCool.addEventListener("click", ()=>{
-  // Do Doppler then sideband instantly for lab state (UI step)
-  const T_D = dopplerLimitTemp_Yb();
-  const omegaZ = TAU*(lab.wzMHz*1e6);
-  const nD = nbarFromTemp(T_D, omegaZ);
-  lab.nbar = nD;
-  lab.dopplerDone = true;
-  // sideband to ground-ish
-  lab.nbar = 0.05;
-  lab.sidebandDone = true;
-  log(`Cooling complete: Doppler limit T≈${fmt(T_D*1e3,3)} mK; n̄→${fmt(lab.nbar,2)}.`);
-});
-
-ui.rngPump.addEventListener("input", ()=>{ lab.pumpSpeed = parseFloat(ui.rngPump.value); updateSummary(); });
-ui.rngOven.addEventListener("input", ()=>{ lab.ovenSetC = parseFloat(ui.rngOven.value); updateSummary(); });
-ui.selBaseP.addEventListener("change", ()=>{ lab.baseP = parseFloat(ui.selBaseP.value); updateSummary(); });
-ui.numQ.addEventListener("change", ()=>{
-  lab.Ntarget = clamp(parseInt(ui.numQ.value,10)||2,1,16);
-  if (lab.Nloaded > lab.Ntarget) lab.Nloaded = lab.Ntarget;
-  lab.loaded = (lab.Nloaded === lab.Ntarget);
-  updateIonPositions();
-  updateTemplate();
-});
-ui.numWz.addEventListener("change", ()=>{ lab.wzMHz = parseFloat(ui.numWz.value); updateIonPositions(); });
-ui.numRFf.addEventListener("change", ()=>{ lab.rfMHz = parseFloat(ui.numRFf.value); });
-ui.numRFv.addEventListener("change", ()=>{ lab.rfVpp = parseFloat(ui.numRFv.value); });
-ui.numWr.addEventListener("change", ()=>{ lab.wrMHz = parseFloat(ui.numWr.value); });
-ui.numB.addEventListener("change", ()=>{ lab.Bgauss = parseFloat(ui.numB.value); });
-
-function updateTemplate(){
-  const n = clamp(parseInt(ui.numQ.value,10)||2,1,16);
-  const t = ui.selTemplate.value;
-  if (t==="bell") ui.txtProgram.value = templateBell();
-  else if (t==="ghz") ui.txtProgram.value = templateGHZ(n);
-  else if (t==="bv") ui.txtProgram.value = templateBV(Math.max(2,n));
-  else if (t==="randcliff") ui.txtProgram.value = templateRandCliff(n);
-  else if (t==="blank") ui.txtProgram.value = `# Write your pulse program here.\nOPTPUMP t=20us\nMEASURE t=300us`;
-}
-ui.selTemplate.addEventListener("change", updateTemplate);
-
-// Compile/validate
-ui.btnCompile.addEventListener("click", ()=>{
-  try{
-    const ops = parseProgram(ui.txtProgram.value);
-    log(`Program validated: ${ops.length} ops parsed.`);
-    // warn if missing measure
-    const hasMeas = ops.some(o=>o.cmd.toUpperCase()==="MEASURE");
-    if (!hasMeas) log("Warning: no MEASURE step found; simulation will measure at end anyway.");
-    drawPulseTimeline(ops);
-  }catch(e){
-    log(`ERROR: ${e.message}`);
-  }
-});
-
-// Run
-ui.btnRun.addEventListener("click", ()=>{
-  try{
-    const ops = parseProgram(ui.txtProgram.value);
-    const n = clamp(parseInt(ui.numQ.value,10)||2,1,16);
-    const shots = clamp(parseInt(ui.numShots.value,10)||1000,1,20000);
-    const cfg = {
-      n,
-      shots,
-      pressureTorr: lab.pressure,
-      wzMHz: parseFloat(ui.numWz.value),
-      T2: Math.max(1e-6, parseFloat(ui.numT2.value)),
-      heatingRate: Math.max(0, parseFloat(ui.numHeat.value)),
-      p1: clamp(parseFloat(ui.numP1.value), 0, 0.2),
-      p2: clamp(parseFloat(ui.numP2.value), 0, 0.8),
-      msMotionCoeff: 0.002, // motional sensitivity coefficient (toy)
-      nbarInit: lab.nbar,
-      detTimeUs: parseFloat(ui.numDetT.value),
-      brightMean: parseFloat(ui.numBright.value),
-      darkMean: parseFloat(ui.numDark.value),
-      thresh: parseFloat(ui.numThresh.value),
-    };
-    log(`Running ${shots} shots on ${n} ions...`);
-    const res = runShots(ops, cfg, log);
-    renderDistribution(res.dist, shots);
-    drawPulseTimeline(ops);
-    drawReadout(res.brightHist, res.darkHist);
-    log(`Done. Unique outcomes: ${res.dist.size}.`);
-  }catch(e){
-    log(`ERROR: ${e.message}`);
-  }
-});
-
-ui.btnReset.addEventListener("click", ()=>{
-  resetLab();
-});
-
-// ---------- Rendering ----------
-function clearCanvas(cv){
-  const ctx = cv.getContext("2d");
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0,0,cv.width,cv.height);
-  return ctx;
-}
-
-function drawEnv(){
-  const cv = ui.cvEnv;
-  const ctx = clearCanvas(cv);
-  const W=cv.width, H=cv.height;
-
-  // background grid
-  ctx.globalAlpha = 1;
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
-  for (let i=0;i<=10;i++){
-    const x = i*W/10;
-    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
-  }
-  for (let i=0;i<=8;i++){
-    const y = i*H/8;
-    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
-  }
-
-  // panel title text
-  ctx.fillStyle = "rgba(232,238,247,0.92)";
-  ctx.font = "14px "+getComputedStyle(document.body).fontFamily;
-  ctx.fillText("Environment telemetry (schematic)", 16, 24);
-
-  // plot pressure (log scale)
-  const trace = lab.envTrace;
-  if (trace.length < 2) return;
-
-  const t0 = trace[0].t;
-  const t1 = trace[trace.length-1].t;
-  const plot = {x:50,y:60,w:W-70,h:H-90};
-
-  // axes labels
-  ctx.fillStyle = "rgba(169,183,201,0.85)";
-  ctx.font = "12px "+getComputedStyle(document.body).fontFamily;
-  ctx.fillText("Pressure (Torr, log)", plot.x, plot.y-14);
-  ctx.fillText("Oven (°C)", plot.x + plot.w*0.62, plot.y-14);
-
-  // y ranges
-  const pMin = 1e-12, pMax = 1e-7;
-  const logMin = Math.log10(pMin), logMax = Math.log10(pMax);
-
-  function xOf(t){ return plot.x + (t - t0)/(t1 - t0) * plot.w; }
-  function yOfP(p){
-    const lp = Math.log10(clamp(p, pMin, pMax));
-    const u = (lp - logMin)/(logMax - logMin);
-    return plot.y + (1-u)*plot.h;
-  }
-  function yOfT(T){
-    const Tmin=20, Tmax=600;
-    const u=(clamp(T,Tmin,Tmax)-Tmin)/(Tmax-Tmin);
-    return plot.y + (1-u)*plot.h;
-  }
-
-  // pressure line
-  ctx.strokeStyle = "rgba(123,220,255,0.95)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for (let i=0;i<trace.length;i++){
-    const x=xOf(trace[i].t);
-    const y=yOfP(trace[i].p);
-    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-
-  // oven line
-  ctx.strokeStyle = "rgba(157,255,191,0.85)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for (let i=0;i<trace.length;i++){
-    const x=xOf(trace[i].t);
-    const y=yOfT(trace[i].oven);
-    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-
-  // draw current markers
-  const xNow = xOf(lab.t);
-  ctx.strokeStyle = "rgba(255,255,255,0.10)";
-  ctx.beginPath(); ctx.moveTo(xNow, plot.y); ctx.lineTo(xNow, plot.y+plot.h); ctx.stroke();
-
-  // base pressure line
-  const yBase = yOfP(lab.baseP);
-  ctx.setLineDash([6,6]);
-  ctx.strokeStyle = "rgba(255,210,123,0.55)";
-  ctx.beginPath(); ctx.moveTo(plot.x, yBase); ctx.lineTo(plot.x+plot.w, yBase); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = "rgba(255,210,123,0.75)";
-  ctx.fillText("base", plot.x+plot.w-30, yBase-6);
-
-  // collision risk indicator
-  const ready = isLabReady();
-  const risk = clamp((lab.pressure / (10*lab.baseP)), 0, 10);
-  const riskTxt = ready ? "low" : (risk<3 ? "moderate" : "high");
-  ctx.fillStyle = ready ? "rgba(157,255,191,0.9)" : "rgba(255,210,123,0.85)";
-  ctx.fillText(`Collision risk: ${riskTxt}`, plot.x, plot.y+plot.h+20);
-
-  // numeric overlay
-  ctx.fillStyle = "rgba(232,238,247,0.9)";
-  ctx.fillText(`P=${fmt(lab.pressure,2)} Torr`, plot.x, plot.y+plot.h+40);
-  ctx.fillText(`Oven=${Math.round(lab.ovenC)}°C`, plot.x+170, plot.y+plot.h+40);
-  ctx.fillStyle = "rgba(169,183,201,0.85)";
-  ctx.fillText(`Ωrf/2π=${fmt(lab.rfMHz,1)}MHz, ωz/2π=${fmt(lab.wzMHz,2)}MHz`, plot.x+330, plot.y+plot.h+40);
-}
-
-function drawIons(){
-  const cv = ui.cvIons;
-  const ctx = clearCanvas(cv);
-  const W=cv.width, H=cv.height;
-
-  // coordinate system: x axis is z (axial), y is vertical
-  const margin = 70;
-  const z = lab.ionPositions;
-  const N = lab.Ntarget;
-  const omegaZ = TAU*(lab.wzMHz*1e6);
-  const l = trapLengthScale(omegaZ);
-  // show +/- 6 l
-  const zMin = -6*l, zMax = 6*l;
-  const xOf = (zz)=> margin + (zz - zMin)/(zMax-zMin) * (W-2*margin);
-  const y0 = H*0.55;
-
-  // draw axial potential
-  ctx.strokeStyle = "rgba(255,255,255,0.10)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for (let i=0;i<=400;i++){
-    const zz = zMin + (zMax-zMin)*i/400;
-    const U = 0.5*(zz/l)*(zz/l); // dimensionless
-    const y = y0 - U*30;
-    const x = xOf(zz);
-    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-
-  // draw ions
-  for (let i=0;i<N;i++){
-    const x = xOf(z[i]||0);
-    const y = y0;
-    ctx.beginPath();
-    ctx.fillStyle = "rgba(123,220,255,0.9)";
-    ctx.arc(x,y, 12, 0, TAU);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.20)";
-    ctx.stroke();
-    // label
-    ctx.fillStyle = "rgba(11,15,20,0.9)";
-    ctx.font = "bold 12px "+getComputedStyle(document.body).fontFamily;
-    ctx.textAlign="center";
-    ctx.fillText(String(i), x, y+4);
-    ctx.textAlign="left";
-  }
-
-  // draw laser beams (schematic)
-  ctx.strokeStyle = "rgba(157,255,191,0.18)";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(margin, y0-90);
-  ctx.lineTo(W-margin, y0+90);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(255,210,123,0.18)";
-  ctx.beginPath();
-  ctx.moveTo(margin, y0+90);
-  ctx.lineTo(W-margin, y0-90);
-  ctx.stroke();
-
-  // motional nbar meter
-  ctx.fillStyle = "rgba(232,238,247,0.92)";
-  ctx.font = "14px "+getComputedStyle(document.body).fontFamily;
-  ctx.fillText("Ion chain (1D axial) + motion", 16, 24);
-  ctx.fillStyle = "rgba(169,183,201,0.85)";
-  ctx.font = "12px "+getComputedStyle(document.body).fontFamily;
-  ctx.fillText(`Spacing scale l≈${fmtSI(l, "m")}  •  n̄(axial)≈${fmt(lab.nbar,2)}`, 16, 44);
-
-  // draw nbar bar
-  const bar = {x:16, y:H-46, w:W-32, h:14};
-  ctx.fillStyle = "rgba(255,255,255,0.06)";
-  ctx.fillRect(bar.x, bar.y, bar.w, bar.h);
-  const u = clamp(Math.log10(1+lab.nbar)/Math.log10(1+200), 0, 1);
-  ctx.fillStyle = "rgba(157,255,191,0.65)";
-  ctx.fillRect(bar.x, bar.y, bar.w*u, bar.h);
-  ctx.strokeStyle = "rgba(255,255,255,0.10)";
-  ctx.strokeRect(bar.x, bar.y, bar.w, bar.h);
-  ctx.fillStyle = "rgba(169,183,201,0.85)";
-  ctx.fillText("0", bar.x, bar.y-6);
-  ctx.textAlign="right";
-  ctx.fillText("~200", bar.x+bar.w, bar.y-6);
-  ctx.textAlign="left";
-}
-
-function drawPulseTimeline(ops){
-  const cv = ui.cvPulse;
-  const ctx = clearCanvas(cv);
-  const W=cv.width, H=cv.height;
-
-  ctx.fillStyle = "rgba(232,238,247,0.92)";
-  ctx.font = "14px "+getComputedStyle(document.body).fontFamily;
-  ctx.fillText("Pulse schedule (schematic)", 16, 24);
-
-  if (!ops || ops.length===0){
-    ctx.fillStyle = "rgba(169,183,201,0.8)";
-    ctx.fillText("No program compiled.", 16, 48);
-    return;
-  }
-  let tEnd = 0;
-  for (const op of ops) tEnd = Math.max(tEnd, op.t0 + op.dt);
-  tEnd = Math.max(tEnd, 1e-6);
-  const plot = {x:20,y:60,w:W-40,h:H-90};
-  // lane mapping
-  const lanes = ["PUMP_DOWN","OVEN","PI","DOPPLER","SIDEBAND","OPTPUMP","RAMAN","MS","VZ","MEASURE","H","S","SDG","X","Y","Z","CX","CZ"];
-  const laneIndex = (cmd)=>{
-    const k = cmd.toUpperCase();
-    const idx = lanes.indexOf(k);
-    return idx>=0 ? idx : lanes.length-1;
-  }
-  const laneH = plot.h / 8;
-  function yLane(cmd){
-    // group into 8 bands
-    const k = cmd.toUpperCase();
-    if (["PUMP_DOWN","OVEN","PI"].includes(k)) return 0;
-    if (["DOPPLER","SIDEBAND","OPTPUMP"].includes(k)) return 1;
-    if (["RAMAN","H","S","SDG","X","Y","Z","VZ"].includes(k)) return 2;
-    if (["MS","CX","CZ"].includes(k)) return 3;
-    if (["MEASURE"].includes(k)) return 4;
-    return 5;
-  }
-  // axes
-  ctx.strokeStyle="rgba(255,255,255,0.08)";
-  ctx.lineWidth=1;
-  for (let i=0;i<=10;i++){
-    const x = plot.x + plot.w*i/10;
-    ctx.beginPath(); ctx.moveTo(x, plot.y); ctx.lineTo(x, plot.y+plot.h); ctx.stroke();
-  }
-  // lane labels
-  ctx.fillStyle="rgba(169,183,201,0.85)";
-  ctx.font="12px "+getComputedStyle(document.body).fontFamily;
-  const labels = ["vacuum/loading","cooling","1Q control","2Q bus","readout"];
-  for (let l=0;l<labels.length;l++){
-    ctx.fillText(labels[l], plot.x, plot.y + laneH*(l+0.7));
-    ctx.strokeStyle="rgba(255,255,255,0.08)";
-    ctx.beginPath(); ctx.moveTo(plot.x, plot.y+laneH*(l+1)); ctx.lineTo(plot.x+plot.w, plot.y+laneH*(l+1)); ctx.stroke();
-  }
-
-  function xOf(t){ return plot.x + (t/tEnd)*plot.w; }
-
-  for (const op of ops){
-    const k = op.cmd.toUpperCase();
-    const lane = yLane(k);
-    const y = plot.y + laneH*lane + 12;
-    const h = laneH*0.6;
-    const x0 = xOf(op.t0);
-    const x1 = xOf(op.t0 + op.dt);
-    const w = Math.max(2, x1-x0);
-    let col = "rgba(123,220,255,0.22)";
-    if (["MS","CX","CZ"].includes(k)) col="rgba(157,255,191,0.20)";
-    if (["MEASURE"].includes(k)) col="rgba(255,210,123,0.20)";
-    if (["PUMP_DOWN","OVEN","PI"].includes(k)) col="rgba(180,160,255,0.15)";
-    ctx.fillStyle=col;
-    ctx.fillRect(x0,y,w,h);
-    ctx.strokeStyle="rgba(255,255,255,0.10)";
-    ctx.strokeRect(x0,y,w,h);
-    ctx.fillStyle="rgba(232,238,247,0.85)";
-    ctx.font="11px "+getComputedStyle(document.body).fontFamily;
-    ctx.fillText(k, x0+4, y+12);
-  }
-
-  // total time
-  ctx.fillStyle="rgba(169,183,201,0.85)";
-  ctx.font="12px "+getComputedStyle(document.body).fontFamily;
-  ctx.fillText(`Total sequence time ≈ ${fmtSI(tEnd, "s")}`, plot.x, plot.y+plot.h+24);
-}
-
-function drawReadout(brightHist, darkHist){
-  const cv = ui.cvReadout;
-  const ctx = clearCanvas(cv);
-  const W=cv.width, H=cv.height;
-
-  ctx.fillStyle = "rgba(232,238,247,0.92)";
-  ctx.font = "14px "+getComputedStyle(document.body).fontFamily;
-  ctx.fillText("Readout photon counts (ion 0 histogram)", 16, 24);
-
-  const thresh = parseFloat(ui.numThresh.value);
-
-  // Build histogram bins 0..max
-  const all = (brightHist||[]).concat(darkHist||[]);
-  const maxC = Math.max(40, ...all, thresh+10);
-  const bins = Math.min(60, maxC+1);
-  const bright = new Array(bins).fill(0);
-  const dark = new Array(bins).fill(0);
-
-  for (const c of brightHist||[]){
-    bright[Math.min(bins-1, c)]++;
-  }
-  for (const c of darkHist||[]){
-    dark[Math.min(bins-1, c)]++;
-  }
-  const maxY = Math.max(1, ...bright, ...dark);
-
-  const plot = {x:50,y:60,w:W-70,h:H-90};
-  // axes
-  ctx.strokeStyle="rgba(255,255,255,0.10)";
-  ctx.beginPath(); ctx.moveTo(plot.x, plot.y); ctx.lineTo(plot.x, plot.y+plot.h); ctx.lineTo(plot.x+plot.w, plot.y+plot.h); ctx.stroke();
-
-  const barW = plot.w / bins;
-  for (let i=0;i<bins;i++){
-    const x = plot.x + i*barW;
-    const hb = (bright[i]/maxY)*plot.h;
-    const hd = (dark[i]/maxY)*plot.h;
-    // dark bars (bottom)
-    ctx.fillStyle="rgba(123,220,255,0.30)";
-    ctx.fillRect(x, plot.y+plot.h-hd, barW*0.9, hd);
-    // bright overlay
-    ctx.fillStyle="rgba(157,255,191,0.25)";
-    ctx.fillRect(x, plot.y+plot.h-hb, barW*0.9, hb);
-  }
-
-  // threshold line
-  const xT = plot.x + thresh*barW;
-  ctx.setLineDash([6,6]);
-  ctx.strokeStyle="rgba(255,210,123,0.85)";
-  ctx.beginPath(); ctx.moveTo(xT, plot.y); ctx.lineTo(xT, plot.y+plot.h); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle="rgba(255,210,123,0.85)";
-  ctx.fillText(`threshold=${thresh}`, xT+6, plot.y+16);
-
-  ctx.fillStyle="rgba(169,183,201,0.85)";
-  ctx.font="12px "+getComputedStyle(document.body).fontFamily;
-  ctx.fillText("Counts", plot.x+plot.w-50, plot.y+plot.h+22);
-  ctx.save();
-  ctx.translate(16, plot.y+plot.h/2);
-  ctx.rotate(-Math.PI/2);
-  ctx.fillText("Occurrences (normalized)", 0, 0);
-  ctx.restore();
-  ctx.fillStyle="rgba(169,183,201,0.85)";
-  ctx.fillText(`dark shots: ${(darkHist||[]).length}`, plot.x, plot.y-10);
-  ctx.fillText(`bright shots: ${(brightHist||[]).length}`, plot.x+160, plot.y-10);
-}
-
-function renderDistribution(dist, shots){
-  // show top bitstrings
-  const entries = Array.from(dist.entries()).sort((a,b)=>b[1]-a[1]);
-  ui.tblOut.innerHTML = "";
-  const maxRows = 16;
-  for (let i=0;i<Math.min(maxRows, entries.length); i++){
-    const [bits, c] = entries[i];
-    const p = c/shots;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="mono"><b>${bits}</b></td><td>${c}</td><td>${(100*p).toFixed(2)}%</td>`;
-    ui.tblOut.appendChild(tr);
-  }
-  if (entries.length===0){
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="3" class="tiny">No results.</td>`;
-    ui.tblOut.appendChild(tr);
-  }
-}
-
-// ---------- animation loop ----------
-let last = performance.now();
-function frame(now){
-  const dt = Math.min(0.05, (now-last)/1000);
-  last = now;
-  stepLab(dt);
-  drawEnv();
-  drawIons();
-  requestAnimationFrame(frame);
-}
-
-// init
-resetLab();
-updateTemplate();
-drawPulseTimeline(parseProgram(ui.txtProgram.value));
-drawReadout([],[]);
-requestAnimationFrame(frame);
-</script>
+    // Boot
+    bindControls();
+    log('Simulator ready.');
+    requestAnimationFrame(tick);
+  </script>
 </body>
 </html>
