@@ -3,108 +3,361 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Quantum Ion Lab Simulator (Single-File)</title>
+  <title>Quantum Ion Lab Simulator (Single‑File)</title>
   <style>
     :root{
       --bg:#0b0f14;
-      --panel:rgba(255,255,255,.04);
-      --panel2:rgba(255,255,255,.03);
+      --bg2:#070a0f;
+      --panel:rgba(255,255,255,.05);
+      --panel2:rgba(255,255,255,.035);
       --stroke:rgba(255,255,255,.10);
       --stroke2:rgba(255,255,255,.18);
       --text:#e9f0fb;
       --muted:#a7b4c8;
+      --faint:rgba(167,180,200,.65);
+
       --ok:#2fe39a;
       --warn:#ffd27b;
       --bad:#ff6b6b;
+      --accent:#7bdcff;
+
+      --shadow: 0 18px 48px rgba(0,0,0,.45);
+      --shadow2: 0 10px 26px rgba(0,0,0,.30);
+      --r:14px;
+
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
     }
 
     *{ box-sizing:border-box; }
     html,body{ height:100%; }
     body{
       margin:0;
-      background:var(--bg);
       color:var(--text);
-      font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family:var(--sans);
       letter-spacing:.1px;
+      background:
+        radial-gradient(1100px 700px at 18% -10%, rgba(123,220,255,.14), transparent 55%),
+        radial-gradient(900px 520px at 78% 0%, rgba(47,227,154,.10), transparent 60%),
+        radial-gradient(900px 520px at 55% 120%, rgba(180,160,255,.08), transparent 60%),
+        linear-gradient(180deg, var(--bg2), var(--bg));
+      overflow-x:hidden;
     }
 
-    header{
-      padding:14px 14px 0;
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:12px;
-    }
-    header h1{
-      margin:0;
-      font-size:18px;
-      font-weight:700;
-    }
-    header .sub{
-      margin:4px 0 0;
-      color:var(--muted);
-      font-size:12px;
-    }
-
-    .statusline{
-      display:flex;
-      align-items:center;
+    /* ---------- App bar ---------- */
+    .appbar{
+      position:sticky; top:0; z-index:50;
+      display:grid;
+      grid-template-columns: auto 1fr auto auto;
       gap:10px;
-      padding-bottom:4px;
+      align-items:center;
+      padding:10px 12px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(11,15,20,.68);
+      backdrop-filter: blur(10px);
     }
-    .dot{
-      width:10px;height:10px;border-radius:50%;
-      background:var(--warn);
-      box-shadow:0 0 10px rgba(255,210,123,.35);
+    .appbar .left{
+      display:flex; align-items:center; gap:10px;
+      min-width: 0;
     }
+    .brand{
+      min-width:0;
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .brand h1{
+      margin:0;
+      font-size:15px;
+      font-weight:850;
+      letter-spacing:.2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .brand .sub{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:1px solid rgba(123,220,255,.25);
+      background: rgba(123,220,255,.08);
+      color: rgba(200,245,255,.95);
+      border-radius:999px;
+      padding:2px 8px;
+      font-size:11px;
+      font-weight:750;
+      margin-left:8px;
+      vertical-align:middle;
+    }
+    .tag .dotMini{ width:7px; height:7px; border-radius:50%; background: rgba(123,220,255,.95); }
+
+    .iconBtn{
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border-radius:12px;
+      padding:9px 10px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow: var(--shadow2);
+    }
+    .iconBtn:hover{ background:rgba(255,255,255,.08); }
+    .iconBtn:active{ transform:translateY(1px); }
+
+    /* FIX: nav button is only meaningful on mobile where sidebar becomes off-canvas */
+    #btnNav{ display:none; }
+
+    .search{
+      display:flex; align-items:center; gap:8px;
+      min-width: 260px;
+      max-width: 520px;
+    }
+    .search input[type="search"]{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.22);
+      color:var(--text);
+      padding:9px 10px;
+      outline:none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    .search input[type="search"]::placeholder{ color: rgba(167,180,200,.65); }
+
+    .actions{
+      display:flex; gap:8px; align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
     .pill{
       border:1px solid var(--stroke);
-      background:var(--panel2);
+      background:rgba(255,255,255,.04);
       border-radius:999px;
-      padding:6px 10px;
+      padding:8px 10px;
       font-size:12px;
       color:var(--muted);
       display:flex;
       gap:10px;
       align-items:center;
       white-space:nowrap;
+      box-shadow: var(--shadow2);
     }
-    .pill strong{ color:var(--text); font-weight:700; }
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--warn);
+      box-shadow:0 0 12px rgba(255,210,123,.35);
+      flex:0 0 auto;
+    }
+    .pill strong{ color:var(--text); font-weight:850; letter-spacing:.2px; }
 
-    .wrap{
-      padding:14px;
+    /* ---------- Layout ---------- */
+    .layout{
       display:grid;
-      grid-template-columns: 390px 1fr;
+      grid-template-columns: 270px minmax(0,1fr) 420px;
+      gap:14px;
+      padding:14px;
+      max-width: 1680px;
+      margin:0 auto;
+      align-items:start;
+    }
+
+    /* ---------- Sidebar ---------- */
+    .sidebar{
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position: sticky;
+      top: 70px;
+      max-height: calc(100vh - 88px);
+      display:flex;
+      flex-direction:column;
+    }
+    .sideHead{
+      padding:12px 12px 10px;
+      border-bottom:1px solid var(--stroke);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background: rgba(255,255,255,.02);
+    }
+    .sideHead .t{
+      font-weight:850;
+      font-size:12px;
+      letter-spacing:.2px;
+      color: rgba(232,240,251,.92);
+    }
+    .sideBody{
+      padding:10px;
+      overflow:auto;
+    }
+    .sideSectionTitle{
+      font-size:11px;
+      color: rgba(167,180,200,.85);
+      font-weight:850;
+      letter-spacing:.16px;
+      text-transform:uppercase;
+      margin:10px 4px 8px;
+    }
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .nav a{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:8px 10px;
+      border-radius:12px;
+      text-decoration:none;
+      color: rgba(232,240,251,.86);
+      border:1px solid transparent;
+      background: transparent;
+      font-size:12px;
+      font-weight:700;
+    }
+    .nav a:hover{
+      background: rgba(255,255,255,.05);
+      border-color: rgba(255,255,255,.08);
+    }
+    .nav a.active{
+      background: rgba(123,220,255,.11);
+      border-color: rgba(123,220,255,.22);
+      box-shadow: inset 0 0 0 1px rgba(123,220,255,.08);
+    }
+    .nav a .nDot{
+      width:8px;height:8px;border-radius:50%;
+      background: rgba(255,255,255,.18);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.10) inset;
+      flex:0 0 auto;
+    }
+    .nav a.active .nDot{ background: rgba(123,220,255,.95); }
+
+    .qaGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px;
+    }
+
+    /* ---------- Main / Right ---------- */
+    .main{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
       gap:14px;
     }
+    .right{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      position: sticky;
+      top: 70px;
+      max-height: calc(100vh - 88px);
+      overflow:auto;
+      padding-right:2px;
+    }
 
-    .panel{
+    /* ---------- Sections & Panels ---------- */
+    section[data-section]{
+      scroll-margin-top: 84px;
+    }
+    .sectionHead{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 2px 0;
+    }
+    .sectionHead h2{
+      margin:0;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:.24px;
+    }
+    .sectionHead .hint{
+      margin:0;
+      font-size:12px;
+      color: var(--muted);
+      line-height:1.25;
+    }
+    .sectionTools{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    details.panel{
       border:1px solid var(--stroke);
-      background:var(--panel);
-      border-radius:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    details.panel > summary{
+      list-style:none;
+      cursor:pointer;
+      user-select:none;
+      padding:12px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(255,255,255,.02);
+    }
+    details.panel > summary::-webkit-details-marker{ display:none; }
+    .sumLeft{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      min-width:0;
+    }
+    .sumTitle{
+      font-size:12.5px;
+      font-weight:900;
+      letter-spacing:.2px;
+      margin:0;
+    }
+    .sumSub{
+      font-size:12px;
+      color: var(--muted);
+      margin:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .chev{
+      font-size:14px;
+      color: rgba(232,240,251,.80);
+      transform: rotate(0deg);
+      transition: transform .15s ease;
+      flex:0 0 auto;
+    }
+    details.panel[open] .chev{ transform: rotate(180deg); }
+
+    .panelBody{
       padding:12px;
     }
-    .panel h2{
-      margin:0 0 10px;
-      font-size:13px;
-      font-weight:800;
-      letter-spacing:.2px;
-    }
-    .panel h3{
-      margin:12px 0 8px;
-      font-size:12px;
-      font-weight:800;
-      color:var(--muted);
-      letter-spacing:.2px;
-    }
-
-    .mono{ font-family:var(--mono); }
 
     .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
     .row{ display:flex; gap:10px; align-items:center; }
-    .row.wrap{ flex-wrap:wrap; }
+    .wrapRow{ flex-wrap:wrap; }
     .stack{ display:flex; flex-direction:column; gap:10px; }
     .sep{ height:1px; background:var(--stroke); margin:10px 0; }
 
@@ -115,37 +368,71 @@
       font-size:12px;
       color:var(--muted);
     }
-
     input[type="number"], input[type="text"], textarea, select{
       width:100%;
-      border-radius:10px;
+      border-radius:12px;
       border:1px solid var(--stroke);
-      background:rgba(0,0,0,.25);
+      background:rgba(0,0,0,.22);
       color:var(--text);
-      padding:8px 10px;
+      padding:9px 10px;
       outline:none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
     }
     input[type="range"]{ width:100%; }
     textarea{
-      min-height:110px;
+      min-height:120px;
       resize:vertical;
       font-family:var(--mono);
       line-height:1.35;
       font-size:12px;
     }
 
-    button{
+    .btn{
       border:1px solid var(--stroke2);
       background:rgba(255,255,255,.05);
       color:var(--text);
       border-radius:12px;
       padding:9px 10px;
       cursor:pointer;
-      font-weight:700;
+      font-weight:850;
       font-size:12px;
+      box-shadow: var(--shadow2);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
     }
-    button:hover{ background:rgba(255,255,255,.08); }
-    button:active{ transform:translateY(1px); }
+    .btn:hover{ background:rgba(255,255,255,.08); }
+    .btn:active{ transform:translateY(1px); }
+    .btn.primary{
+      border-color: rgba(123,220,255,.35);
+      background: rgba(123,220,255,.11);
+      color: rgba(210,247,255,.98);
+    }
+    .btn.good{
+      border-color: rgba(47,227,154,.35);
+      background: rgba(47,227,154,.10);
+      color: rgba(200,255,230,.98);
+    }
+    .btn.warn{
+      border-color: rgba(255,210,123,.38);
+      background: rgba(255,210,123,.10);
+      color: rgba(255,236,200,.98);
+    }
+    .btn.danger{
+      border-color: rgba(255,107,107,.40);
+      background: rgba(255,107,107,.10);
+      color: rgba(255,220,220,.98);
+    }
+    .btn.ghost{
+      background: rgba(0,0,0,.10);
+      border-color: rgba(255,255,255,.12);
+      box-shadow:none;
+    }
+    .btn.toggle[aria-pressed="true"]{
+      border-color: rgba(47,227,154,.45);
+      background: rgba(47,227,154,.14);
+    }
 
     .kv{
       display:grid;
@@ -157,6 +444,38 @@
     }
     .kv .k{ color:var(--muted); }
     .kv .v{ font-family:var(--mono); color:var(--text); }
+
+    .cards{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:10px;
+    }
+    .card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      border-radius: 14px;
+      padding:10px 10px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    .card .k{
+      font-size:11px;
+      color: rgba(167,180,200,.80);
+      font-weight:850;
+      letter-spacing:.18px;
+      text-transform:uppercase;
+    }
+    .card .v{
+      margin-top:6px;
+      font-family: var(--mono);
+      font-size:13px;
+      color: rgba(232,240,251,.95);
+      font-weight:850;
+    }
+    .card .s{
+      margin-top:4px;
+      font-size:11px;
+      color: rgba(167,180,200,.72);
+    }
 
     .spark{
       width:10px;height:10px;border-radius:50%;
@@ -176,9 +495,11 @@
       border-radius:12px;
       border:1px solid var(--stroke);
       background:rgba(0,0,0,.18);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
     }
-    .cv.tall{ height:300px; }
+    .cv.tall{ height:320px; }
     .cv.short{ height:180px; }
+    .cv.mini{ height:160px; }
 
     table{
       width:100%;
@@ -190,11 +511,15 @@
       padding:8px 6px;
       text-align:left;
     }
-    th{
-      color:var(--muted);
-      font-weight:800;
-    }
+    th{ color:var(--muted); font-weight:900; }
+    .mono{ font-family:var(--mono); }
 
+    .logWrap{
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .logBar{
+      display:flex; gap:8px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
     .log{
       font-family:var(--mono);
       font-size:12px;
@@ -202,7 +527,7 @@
       color:var(--text);
       white-space:pre-wrap;
       margin:0;
-      max-height:180px;
+      max-height:220px;
       overflow:auto;
       border-radius:12px;
       border:1px solid var(--stroke);
@@ -210,404 +535,811 @@
       padding:10px;
     }
 
-    .right{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:14px;
-      align-content:start;
+    /* ---------- Toast ---------- */
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(8px);
+      opacity: 0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 80;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(10,14,20,.78);
+      backdrop-filter: blur(10px);
+      color: rgba(232,240,251,.95);
+      padding:10px 12px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      max-width: min(720px, calc(100vw - 22px));
+      font-size:12px;
     }
-    .span2{ grid-column:1 / span 2; }
+    .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    @media (max-width: 1080px){
-      .wrap{ grid-template-columns: 1fr; }
-      .right{ grid-template-columns:1fr; }
-      .span2{ grid-column:auto; }
+    /* ---------- Overlay / mobile nav ---------- */
+    .overlay{
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease;
+      z-index: 60;
     }
+    body.navOpen .overlay{ opacity: 1; pointer-events: auto; }
+
+    /* ---------- Dialog ---------- */
+    dialog{
+      border:none;
+      border-radius: 18px;
+      padding:0;
+      width: min(680px, calc(100vw - 24px));
+      background: rgba(16,22,32,.96);
+      color: rgba(232,240,251,.95);
+      box-shadow: var(--shadow);
+    }
+    dialog::backdrop{ background: rgba(0,0,0,.55); }
+    .dlgHd{
+      padding:14px 14px 10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .dlgHd h3{ margin:0; font-size:13px; font-weight:950; letter-spacing:.2px; }
+    .dlgBd{
+      padding:12px 14px 14px;
+      color: rgba(167,180,200,.95);
+      font-size:12px;
+      line-height:1.45;
+    }
+    .kbd{
+      font-family: var(--mono);
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.25);
+      padding:2px 6px;
+      border-radius:8px;
+      color: rgba(232,240,251,.92);
+    }
+    .dlgFt{
+      padding: 0 14px 14px;
+      display:flex; justify-content:flex-end; gap:10px;
+    }
+
+    /* ---------- Focus ---------- */
+    :focus-visible{
+      outline: 2px solid rgba(123,220,255,.85);
+      outline-offset: 2px;
+      border-radius: 10px;
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 1220px){
+      .layout{ grid-template-columns: 270px minmax(0,1fr); }
+      .right{ position: static; max-height: none; overflow: visible; }
+    }
+    @media (max-width: 980px){
+      #btnNav{ display:inline-flex; } /* FIX: show mobile nav button */
+      .appbar{ grid-template-columns: auto 1fr auto; }
+      .search{ display:none; }
+      .layout{ grid-template-columns: 1fr; }
+      .sidebar{
+        position: fixed;
+        left: 12px;
+        top: 62px;
+        width: min(320px, calc(100vw - 24px));
+        max-height: calc(100vh - 78px);
+        transform: translateX(-120%);
+        transition: transform .18s ease;
+        z-index: 70;
+      }
+      body.navOpen .sidebar{ transform: translateX(0); }
+      .right{ position: static; max-height:none; }
+      .cards{ grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      *{ transition: none !important; scroll-behavior: auto !important; }
+    }
+    html{ scroll-behavior: smooth; }
   </style>
 </head>
 
 <body>
-  <header>
-    <div>
-      <h1>Quantum Ion Lab Simulator</h1>
-      <div class="sub">Vacuum + loading + pulse program + readout + camera + lasers + micromotion (single-file demo).</div>
-    </div>
-    <div class="statusline">
-      <div class="pill">
-        <span id="dotReady" class="dot" aria-hidden="true"></span>
-        <strong id="readyTxt">INIT</strong>
-      </div>
-    </div>
-  </header>
-
-  <div class="wrap">
-    <!-- LEFT COLUMN -->
-    <div class="stack">
-      <div class="panel">
-        <h2>Vacuum, Oven, Loading</h2>
-
-        <div class="grid2">
-          <label>
-            Base pressure
-            <select id="selBaseP">
-              <option value="1e-12">1×10⁻¹² mbar</option>
-              <option value="3e-12">3×10⁻¹² mbar</option>
-              <option value="1e-11" selected>1×10⁻¹¹ mbar</option>
-              <option value="3e-11">3×10⁻¹¹ mbar</option>
-              <option value="1e-10">1×10⁻¹⁰ mbar</option>
-            </select>
-          </label>
-
-          <label>
-            PI scheme
-            <select id="selPI">
-              <option value="none">None</option>
-              <option value="ca40" selected>Ca-40 (example)</option>
-              <option value="ca44">Ca-44 (example)</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="grid2" style="margin-top:10px;">
-          <label>
-            Pump speed <span class="mono">(<span id="txtPump">65</span>%)</span>
-            <input id="rngPump" type="range" min="0" max="100" value="65" />
-          </label>
-
-          <label>
-            Oven set <span class="mono">(<span id="txtOvenSet">40</span>%)</span>
-            <input id="rngOven" type="range" min="0" max="100" value="40" />
-          </label>
-        </div>
-
-        <div class="row wrap" style="margin-top:10px;">
-          <button id="btnPump" type="button">Pump</button>
-          <button id="btnBake" type="button">Bake</button>
-          <button id="btnOven" type="button">Oven</button>
-          <button id="btnLoad" type="button">Load Ions</button>
-          <button id="btnCool" type="button">Cool</button>
-          <button id="btnReset" type="button">Reset</button>
-        </div>
-
-        <div class="sep"></div>
-        <div class="kv">
-          <div class="k">Pressure</div><div class="v" id="kvPressure">—</div>
-          <div class="k">Oven temp</div><div class="v" id="kvOven">—</div>
-          <div class="k">RF drive</div><div class="v" id="kvRF">—</div>
-          <div class="k">ωz estimate</div><div class="v" id="kvWz">—</div>
-          <div class="k">Ions</div><div class="v" id="kvIons">—</div>
-          <div class="k">n̄</div><div class="v" id="kvNbar">—</div>
-        </div>
-
-        <h3>Vacuum View</h3>
-        <canvas id="cvEnv" class="cv short"></canvas>
-      </div>
-
-      <div class="panel">
-        <h2>Trap & Fields</h2>
-        <div class="grid3">
-          <label>RF f (MHz)<input id="numRFf" type="number" value="28.6" step="0.1" /></label>
-          <label>RF V (Vpp)<input id="numRFv" type="number" value="180" step="1" /></label>
-          <label>B (mT)<input id="numB" type="number" value="0.45" step="0.01" /></label>
-        </div>
-        <div class="grid2" style="margin-top:10px;">
-          <label>ωz (MHz)<input id="numWz" type="number" value="1.10" step="0.01" /></label>
-          <label>ωr (MHz)<input id="numWr" type="number" value="3.60" step="0.05" /></label>
-        </div>
-
-        <h3>Ions</h3>
-        <canvas id="cvIons" class="cv"></canvas>
-      </div>
-
-      <div class="panel">
-        <h2>Pulse Program</h2>
-
-        <div class="grid2">
-          <label>
-            Template
-            <select id="selTemplate">
-              <option value="ramsey" selected>Ramsey</option>
-              <option value="ms">MS Gate</option>
-              <option value="rabi">Rabi</option>
-              <option value="readout">Readout Only</option>
-            </select>
-          </label>
-          <div class="row" style="align-items:flex-end;">
-            <button id="btnCompile" type="button" style="flex:1;">Compile</button>
-            <button id="btnRun" type="button" style="flex:1;">Run</button>
-          </div>
-        </div>
-
-        <label style="margin-top:10px;">
-          Program (one op per line)
-          <textarea id="txtProgram" spellcheck="false"></textarea>
-        </label>
-
-        <h3>Pulse Timeline</h3>
-        <canvas id="cvPulse" class="cv short"></canvas>
-      </div>
-
-      <div class="panel">
-        <h2>Shot & Noise Model</h2>
-
-        <div class="grid3">
-          <label>Qubits<input id="numQ" type="number" min="1" max="16" value="4" step="1" /></label>
-          <label>Shots<input id="numShots" type="number" min="1" max="50000" value="2000" step="100" /></label>
-          <label>Sensor
-            <select id="selSensor">
-              <option value="pmts" selected>PMTs</option>
-              <option value="camera">Camera</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="grid3" style="margin-top:10px;">
-          <label>XTalk (0–1)<input id="numXtalk" type="number" value="0.05" min="0" max="1" step="0.01" /></label>
-          <label>T2 (ms)<input id="numT2" type="number" value="25" min="0.1" step="0.5" /></label>
-          <label>Heat (q/ms)<input id="numHeat" type="number" value="0.03" min="0" step="0.01" /></label>
-        </div>
-
-        <div class="grid2" style="margin-top:10px;">
-          <label>Two-qubit p1 (1q proxy)<input id="numP1" type="number" value="0.006" min="0" max="1" step="0.001" /></label>
-          <label>Two-qubit p2 (corr)<input id="numP2" type="number" value="0.002" min="0" max="1" step="0.001" /></label>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>Readout</h2>
-        <div class="grid3">
-          <label>Det. time (µs)<input id="numDetT" type="number" value="200" step="10" /></label>
-          <label>Bright μ (cts)<input id="numBright" type="number" value="26" step="1" /></label>
-          <label>Dark μ (cts)<input id="numDark" type="number" value="3" step="1" /></label>
-        </div>
-
-        <div class="grid3" style="margin-top:10px;">
-          <label>Threshold (cts)<input id="numThresh" type="number" value="12" step="1" /></label>
-          <label>Classifier
-            <select id="selClassifier">
-              <option value="threshold" selected>Threshold</option>
-              <option value="naivebayes">Naive Bayes</option>
-              <option value="llr">LLR (slider)</option>
-            </select>
-          </label>
-          <label>LLR <span class="mono">(<span id="txtLLR">0.0</span>)</span>
-            <input id="rngLLR" type="range" min="-6" max="6" value="0" step="0.1" />
-          </label>
-        </div>
-
-        <div class="grid3" style="margin-top:10px;">
-          <label>Bin (µs)<input id="numBinUs" type="number" value="5" step="1" /></label>
-          <label>Depump (Hz)<input id="numDepump" type="number" value="700" step="50" /></label>
-          <label>Pump (Hz)<input id="numPump" type="number" value="250" step="25" /></label>
-        </div>
-
-        <div class="sep"></div>
-        <div class="kv">
-          <div class="k">SPAM estimate</div><div class="v" id="txtSpam">—</div>
-          <div class="k">Counts model</div><div class="v" id="txtCountsPhysical">—</div>
-        </div>
-
-        <h3>Readout Histogram</h3>
-        <canvas id="cvReadout" class="cv short"></canvas>
-
-        <h3>Outcome Distribution</h3>
-        <canvas id="cvDist" class="cv short"></canvas>
-
-        <h3>Top outcomes</h3>
-        <table class="mono">
-          <thead>
-            <tr>
-              <th style="width:40%;">bitstring</th>
-              <th style="width:30%;">p</th>
-              <th style="width:30%;">N</th>
-            </tr>
-          </thead>
-          <tbody id="tblOut"></tbody>
-        </table>
-      </div>
-
-      <div class="panel">
-        <h2>Laser Rack</h2>
-
-        <div class="grid2">
-          <label class="row" style="flex-direction:row;justify-content:space-between;">
-            <span>369 nm lock</span>
-            <span class="row" style="gap:8px;">
-              <input id="chkL369" type="checkbox" checked />
-              <span id="spL369" class="spark ok" title="lock status"></span>
-            </span>
-          </label>
-
-          <label class="row" style="flex-direction:row;justify-content:space-between;">
-            <span>399 nm lock</span>
-            <span class="row" style="gap:8px;">
-              <input id="chkL399" type="checkbox" checked />
-              <span id="spL399" class="spark ok"></span>
-            </span>
-          </label>
-
-          <label class="row" style="flex-direction:row;justify-content:space-between;">
-            <span>935 nm lock</span>
-            <span class="row" style="gap:8px;">
-              <input id="chkL935" type="checkbox" checked />
-              <span id="spL935" class="spark ok"></span>
-            </span>
-          </label>
-
-          <label class="row" style="flex-direction:row;justify-content:space-between;">
-            <span>355 nm lock</span>
-            <span class="row" style="gap:8px;">
-              <input id="chkL355" type="checkbox" checked />
-              <span id="spL355" class="spark ok"></span>
-            </span>
-          </label>
-
-          <label class="row" style="flex-direction:row;justify-content:space-between;">
-            <span>638 nm lock</span>
-            <span class="row" style="gap:8px;">
-              <input id="chkL638" type="checkbox" checked />
-              <span id="spL638" class="spark ok"></span>
-            </span>
-          </label>
-
-          <div class="kv" style="grid-column:1 / span 2;">
-            <div class="k">369 err</div><div class="v" id="txtL369Err">—</div>
-            <div class="k">399 err</div><div class="v" id="txtL399Err">—</div>
-            <div class="k">935 err</div><div class="v" id="txtL935Err">—</div>
-            <div class="k">355 err</div><div class="v" id="txtL355Err">—</div>
-            <div class="k">638 err</div><div class="v" id="txtL638Err">—</div>
-          </div>
-        </div>
-
-        <div class="row wrap" style="margin-top:10px;">
-          <button id="btnLockAll" type="button">Lock all</button>
-          <button id="btnUnlockAll" type="button">Unlock all</button>
-          <button id="btnKickLasers" type="button">Kick</button>
-        </div>
-
-        <h3>Laser Diagnostics</h3>
-        <canvas id="cvLaser" class="cv short"></canvas>
-      </div>
-
-      <div class="panel">
-        <h2>Micromotion</h2>
-        <div class="grid2">
-          <label>Comp X (V)<input id="numCompX" type="number" value="0.00" step="0.02" /></label>
-          <label>Comp Y (V)<input id="numCompY" type="number" value="0.00" step="0.02" /></label>
-        </div>
-
-        <div class="sep"></div>
-        <div class="kv">
-          <div class="k">MM amp</div><div class="v" id="txtMMamp">—</div>
-          <div class="k">SB ratio</div><div class="v" id="txtMMratio">—</div>
-        </div>
-
-        <div class="row wrap" style="margin-top:10px;">
-          <button id="btnAutoMM" type="button">Auto-minimize</button>
-        </div>
-
-        <h3>MM Diagnostic</h3>
-        <canvas id="cvMM" class="cv short"></canvas>
-      </div>
-
-      <div class="panel">
-        <h2>Camera View</h2>
-
-        <!-- Fixed markup: ensure labels are closed, and keep controls + canvas neatly grouped -->
-        <div class="row wrap">
-          <label style="flex:1; min-width:150px;">
-            Mode
-            <select id="selCamMode">
-              <option value="counts" selected>Counts</option>
-              <option value="image">Image</option>
-            </select>
-          </label>
-
-          <label style="flex:1; min-width:150px;">
-            Gain <span class="mono">(<span id="txtCamGain">1.0</span>×)</span>
-            <input id="rngCamGain" type="range" min="0.5" max="5" step="0.1" value="1.0" />
-          </label>
-        </div>
-
-        <div class="row wrap" style="margin-top:10px;">
-          <label style="flex:1; min-width:150px;">
-            Blur σ <span class="mono">(<span id="txtCamSigma">1.0</span> px)</span>
-            <input id="rngCamSigma" type="range" min="0.4" max="3.0" step="0.1" value="1.0" />
-          </label>
-
-          <label style="flex:1; min-width:150px;">
-            Pixel scale (µm/px)
-            <input id="numCamScale" type="number" value="1.2" step="0.1" />
-          </label>
-        </div>
-
-        <div class="row wrap" style="margin-top:10px;">
-          <label style="flex:1; min-width:150px;">
-            ROI half-width (px)
-            <input id="numCamROI" type="number" value="14" step="1" min="4" />
-          </label>
-
-          <label style="flex:1; min-width:150px;">
-            Overlay
-            <select id="selCamOverlay">
-              <option value="none" selected>None</option>
-              <option value="roi">ROI</option>
-              <option value="centroid">Centroid</option>
-            </select>
-          </label>
-        </div>
-
-        <h3>Camera</h3>
-        <canvas id="cvCam" class="cv"></canvas>
-      </div>
-
-      <div class="panel">
-        <h2>Calibration</h2>
-        <div class="sub mono" style="color:var(--muted); font-size:12px;">
-          (Placeholder plot — fill with your scan routines if desired.)
-        </div>
-        <h3>Calibration Plot</h3>
-        <canvas id="cvCal" class="cv short"></canvas>
-
-        <h3>Calibration Log</h3>
-        <table class="mono">
-          <thead>
-            <tr>
-              <th style="width:22%;">type</th>
-              <th style="width:22%;">x</th>
-              <th style="width:22%;">y</th>
-              <th style="width:34%;">note</th>
-            </tr>
-          </thead>
-          <tbody id="tblCal"></tbody>
-        </table>
-      </div>
-
-      <div class="panel">
-        <h2>Log</h2>
-        <pre id="log" class="log"></pre>
+  <div class="appbar" role="banner">
+    <div class="left">
+      <button
+        id="btnNav"
+        class="iconBtn"
+        type="button"
+        aria-label="Open navigation"
+        aria-controls="sidebar"
+        aria-expanded="false"
+      >
+        ☰
+      </button>
+      <div class="brand">
+        <h1>
+          Quantum Ion Lab Simulator
+          <span class="tag"><span class="dotMini" aria-hidden="true"></span>single‑file</span>
+        </h1>
+        <p class="sub">Vacuum → load → program → shots → readout (with lasers, micromotion, camera)</p>
       </div>
     </div>
 
-    <!-- RIGHT COLUMN -->
-    <div class="right">
-      <div class="panel span2">
-        <h2>Photon Trace</h2>
-        <canvas id="cvPhoton" class="cv short"></canvas>
-      </div>
+    <div class="search" role="search">
+      <input
+        id="txtFilter"
+        type="search"
+        aria-label="Filter panels"
+        placeholder="Filter panels / controls (e.g., “T2”, “laser”, “readout”)…"
+      />
+    </div>
 
-      <div class="panel">
-        <h2>MS Diagnostic</h2>
-        <canvas id="cvMS" class="cv short"></canvas>
-      </div>
+    <div class="actions">
+      <button id="btnCompileTop" class="btn primary" type="button" title="Compile (Ctrl+Shift+Enter)">Compile</button>
+      <button id="btnRunTop" class="btn good" type="button" title="Run (Ctrl+Enter)">Run</button>
+      <button id="btnHelp" class="btn ghost" type="button" title="Help (?)">Help</button>
+    </div>
 
-      <div class="panel">
-        <h2>Spare</h2>
-        <div class="sub" style="color:var(--muted); font-size:12px;">Reserved for extra plots / scans.</div>
-        <canvas class="cv short"></canvas>
-      </div>
+    <div class="pill" aria-live="polite">
+      <span id="dotReady" class="dot" aria-hidden="true"></span>
+      <strong id="readyTxt">INIT</strong>
     </div>
   </div>
+
+  <div id="navOverlay" class="overlay" aria-hidden="true"></div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar" aria-label="Navigation sidebar">
+      <div class="sideHead">
+        <div class="t">Navigation</div>
+        <button id="btnCloseNav" class="btn ghost" type="button" style="padding:7px 10px; border-radius:12px;">Close</button>
+      </div>
+      <div class="sideBody">
+        <div class="sideSectionTitle">Jump to</div>
+        <nav id="nav" class="nav">
+          <a href="#section-overview"><span class="nDot"></span>Overview</a>
+          <a href="#section-setup"><span class="nDot"></span>Setup (vacuum / trap)</a>
+          <a href="#section-program"><span class="nDot"></span>Program (compile / timeline)</a>
+          <a href="#section-run"><span class="nDot"></span>Experiment (shots / readout)</a>
+          <a href="#section-diagnostics"><span class="nDot"></span>Diagnostics (lasers / mm / camera)</a>
+          <a href="#section-log"><span class="nDot"></span>Log</a>
+        </nav>
+
+        <div class="sideSectionTitle">Quick actions</div>
+        <div class="qaGrid">
+          <button id="qaPump" class="btn toggle" type="button" aria-pressed="false">Pump</button>
+          <button id="qaOven" class="btn toggle" type="button" aria-pressed="false">Oven</button>
+          <button id="qaBake" class="btn toggle" type="button" aria-pressed="false">Bake</button>
+          <button id="qaCool" class="btn toggle" type="button" aria-pressed="false">Cool</button>
+          <button id="qaLoad" class="btn warn" type="button">Load ions</button>
+          <button id="qaReset" class="btn danger" type="button">Reset</button>
+        </div>
+
+        <div class="sideSectionTitle">Live summary</div>
+        <div class="stack">
+          <div class="card">
+            <div class="k">Pressure</div>
+            <div class="v" id="cardPressure">—</div>
+            <div class="s" id="cardPressureHint">—</div>
+          </div>
+          <div class="card">
+            <div class="k">Ions / n̄</div>
+            <div class="v" id="cardIons">—</div>
+            <div class="s" id="cardNbar">—</div>
+          </div>
+          <div class="card">
+            <div class="k">RF / ωz</div>
+            <div class="v" id="cardRF">—</div>
+            <div class="s" id="cardWz">—</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" role="main">
+      <!-- OVERVIEW -->
+      <section id="section-overview" data-section="overview">
+        <div class="sectionHead">
+          <div>
+            <h2>Overview</h2>
+            <p class="hint">A guided “lab‑first” workflow: get vacuum → load ions → cool → compile → run → interpret readout.</p>
+          </div>
+          <div class="sectionTools">
+            <button id="btnScrollProgram" class="btn ghost" type="button">Go to Program</button>
+            <button id="btnScrollReadout" class="btn ghost" type="button">Go to Readout</button>
+          </div>
+        </div>
+
+        <div class="cards" style="margin-top:10px;">
+          <div class="card">
+            <div class="k">System state</div>
+            <div class="v" id="cardState">—</div>
+            <div class="s">Ready status combines vacuum + ions loaded.</div>
+          </div>
+          <div class="card">
+            <div class="k">Last run SPAM</div>
+            <div class="v" id="cardSpam">—</div>
+            <div class="s">Bit error proxy from last run.</div>
+          </div>
+          <div class="card">
+            <div class="k">Tip</div>
+            <div class="v" style="font-family:var(--sans); font-weight:850;">Ctrl+Enter</div>
+            <div class="s">Run quickly. Press <span class="kbd">?</span> for shortcuts.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETUP -->
+      <section id="section-setup" data-section="setup">
+        <div class="sectionHead">
+          <div>
+            <h2>Setup</h2>
+            <p class="hint">Vacuum + oven + loading, then trap settings. The live canvases update continuously.</p>
+          </div>
+        </div>
+
+        <details class="panel" open data-title="Vacuum Oven Loading" id="panelVacuum">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Vacuum, Oven, Loading</div>
+              <div class="sumSub">Pump down, heat oven, load ions, cool (simple model)</div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <div class="grid2">
+              <label>
+                Base pressure
+                <select id="selBaseP">
+                  <option value="1e-12">1×10⁻¹² mbar</option>
+                  <option value="3e-12">3×10⁻¹² mbar</option>
+                  <option value="1e-11" selected>1×10⁻¹¹ mbar</option>
+                  <option value="3e-11">3×10⁻¹¹ mbar</option>
+                  <option value="1e-10">1×10⁻¹⁰ mbar</option>
+                </select>
+              </label>
+
+              <label>
+                PI scheme
+                <select id="selPI">
+                  <option value="none">None</option>
+                  <option value="ca40" selected>Ca‑40 (example)</option>
+                  <option value="ca44">Ca‑44 (example)</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid2" style="margin-top:10px;">
+              <label>
+                Pump speed <span class="mono">(<span id="txtPump">65</span>%)</span>
+                <input id="rngPump" type="range" min="0" max="100" value="65" />
+              </label>
+
+              <label>
+                Oven set <span class="mono">(<span id="txtOvenSet">40</span>%)</span>
+                <input id="rngOven" type="range" min="0" max="100" value="40" />
+              </label>
+            </div>
+
+            <div class="row wrapRow" style="margin-top:10px;">
+              <button id="btnPump" class="btn toggle" type="button" aria-pressed="false">Pump</button>
+              <button id="btnBake" class="btn toggle" type="button" aria-pressed="false">Bake</button>
+              <button id="btnOven" class="btn toggle" type="button" aria-pressed="false">Oven</button>
+              <button id="btnLoad" class="btn warn" type="button">Load Ions</button>
+              <button id="btnCool" class="btn toggle" type="button" aria-pressed="false">Cool</button>
+              <button id="btnReset" class="btn danger" type="button">Reset</button>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="kv">
+              <div class="k">Pressure</div><div class="v" id="kvPressure">—</div>
+              <div class="k">Oven temp</div><div class="v" id="kvOven">—</div>
+              <div class="k">RF drive</div><div class="v" id="kvRF">—</div>
+              <div class="k">ωz estimate</div><div class="v" id="kvWz">—</div>
+              <div class="k">Ions</div><div class="v" id="kvIons">—</div>
+              <div class="k">n̄</div><div class="v" id="kvNbar">—</div>
+            </div>
+
+            <div class="sep"></div>
+
+            <canvas id="cvEnv" class="cv mini" aria-label="Vacuum and oven canvas">Canvas not supported.</canvas>
+          </div>
+        </details>
+
+        <details class="panel" open data-title="Trap Fields" id="panelTrap">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Trap & Fields</div>
+              <div class="sumSub">RF / secular frequencies / B‑field; shows a chain schematic</div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <div class="grid3">
+              <label>RF f (MHz)<input id="numRFf" type="number" value="28.6" step="0.1" /></label>
+              <label>RF V (Vpp)<input id="numRFv" type="number" value="180" step="1" /></label>
+              <label>B (mT)<input id="numB" type="number" value="0.45" step="0.01" /></label>
+            </div>
+            <div class="grid2" style="margin-top:10px;">
+              <label>ωz (MHz)<input id="numWz" type="number" value="1.10" step="0.01" /></label>
+              <label>ωr (MHz)<input id="numWr" type="number" value="3.60" step="0.05" /></label>
+            </div>
+
+            <div class="sep"></div>
+            <canvas id="cvIons" class="cv" aria-label="Ion chain canvas">Canvas not supported.</canvas>
+          </div>
+        </details>
+      </section>
+
+      <!-- PROGRAM -->
+      <section id="section-program" data-section="program">
+        <div class="sectionHead">
+          <div>
+            <h2>Program</h2>
+            <p class="hint">Use a template, edit the sequence, compile, then run. Timeline updates on compile.</p>
+          </div>
+        </div>
+
+        <details class="panel" open data-title="Pulse Program Compiler Timeline" id="panelProgram">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Pulse Program</div>
+              <div class="sumSub">Tiny DSL: <span class="mono">Doppler</span>, <span class="mono">OpticalPump</span>, <span class="mono">Pi/2</span>, <span class="mono">MS</span>, <span class="mono">Readout</span></div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <div class="grid2">
+              <label>
+                Template
+                <select id="selTemplate">
+                  <option value="ramsey" selected>Ramsey</option>
+                  <option value="ms">MS Gate</option>
+                  <option value="rabi">Rabi</option>
+                  <option value="readout">Readout Only</option>
+                </select>
+              </label>
+
+              <div class="row" style="align-items:flex-end;">
+                <button id="btnCompile" class="btn primary" type="button" style="flex:1;">Compile</button>
+                <button id="btnRun" class="btn good" type="button" style="flex:1;">Run</button>
+              </div>
+            </div>
+
+            <label style="margin-top:10px;">
+              Program (one op per line)
+              <textarea id="txtProgram" spellcheck="false"></textarea>
+            </label>
+
+            <div class="sep"></div>
+            <canvas id="cvPulse" class="cv short" aria-label="Pulse timeline canvas">Canvas not supported.</canvas>
+          </div>
+        </details>
+      </section>
+
+      <!-- RUN / READOUT -->
+      <section id="section-run" data-section="run">
+        <div class="sectionHead">
+          <div>
+            <h2>Experiment</h2>
+            <p class="hint">Choose qubits & shots, tune noise/readout, then inspect histogram + distribution.</p>
+          </div>
+        </div>
+
+        <details class="panel" open data-title="Shots Noise Model" id="panelShots">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Shot & Noise Model</div>
+              <div class="sumSub">Qubits, shots, sensor mode, crosstalk, heating, decoherence</div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <div class="grid3">
+              <label>Qubits<input id="numQ" type="number" min="1" max="16" value="4" step="1" /></label>
+              <label>Shots<input id="numShots" type="number" min="1" max="50000" value="2000" step="100" /></label>
+              <label>Sensor
+                <select id="selSensor">
+                  <option value="pmts" selected>PMTs</option>
+                  <option value="camera">Camera</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid3" style="margin-top:10px;">
+              <label>XTalk (0–1)<input id="numXtalk" type="number" value="0.05" min="0" max="1" step="0.01" /></label>
+              <label>T2 (ms)<input id="numT2" type="number" value="25" min="0.1" step="0.5" /></label>
+              <label>Heat (q/ms)<input id="numHeat" type="number" value="0.03" min="0" step="0.01" /></label>
+            </div>
+
+            <details style="margin-top:10px;">
+              <summary style="cursor:pointer; color:rgba(232,240,251,.9); font-weight:850;">
+                Advanced error knobs
+                <span style="color:var(--muted); font-weight:700;">(p1, p2)</span>
+              </summary>
+              <div class="grid2" style="margin-top:10px;">
+                <label>Two‑qubit p1 (1q proxy)<input id="numP1" type="number" value="0.006" min="0" max="1" step="0.001" /></label>
+                <label>Two‑qubit p2 (corr)<input id="numP2" type="number" value="0.002" min="0" max="1" step="0.001" /></label>
+              </div>
+            </details>
+          </div>
+        </details>
+
+        <details class="panel" open data-title="Readout Histogram Distribution" id="panelReadout">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Readout</div>
+              <div class="sumSub">Counts model → classifier → SPAM estimate; histogram + outcome distribution</div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <div class="grid3">
+              <label>Det. time (µs)<input id="numDetT" type="number" value="200" step="10" /></label>
+              <label>Bright μ (cts)<input id="numBright" type="number" value="26" step="1" /></label>
+              <label>Dark μ (cts)<input id="numDark" type="number" value="3" step="1" /></label>
+            </div>
+
+            <div class="grid3" style="margin-top:10px;">
+              <label>Threshold (cts)<input id="numThresh" type="number" value="12" step="1" /></label>
+              <label>Classifier
+                <select id="selClassifier">
+                  <option value="threshold" selected>Threshold</option>
+                  <option value="naivebayes">Naive Bayes</option>
+                  <option value="llr">LLR (slider)</option>
+                </select>
+              </label>
+              <label>LLR <span class="mono">(<span id="txtLLR">0.0</span>)</span>
+                <input id="rngLLR" type="range" min="-6" max="6" value="0" step="0.1" />
+              </label>
+            </div>
+
+            <details style="margin-top:10px;">
+              <summary style="cursor:pointer; color:rgba(232,240,251,.9); font-weight:850;">
+                Advanced readout dynamics
+                <span style="color:var(--muted); font-weight:700;">(bin / pump / depump)</span>
+              </summary>
+              <div class="grid3" style="margin-top:10px;">
+                <label>Bin (µs)<input id="numBinUs" type="number" value="5" step="1" /></label>
+                <label>Depump (Hz)<input id="numDepump" type="number" value="700" step="50" /></label>
+                <label>Pump (Hz)<input id="numPump" type="number" value="250" step="25" /></label>
+              </div>
+            </details>
+
+            <div class="sep"></div>
+            <div class="kv">
+              <div class="k">SPAM estimate</div><div class="v" id="txtSpam">—</div>
+              <div class="k">Counts model</div><div class="v" id="txtCountsPhysical">—</div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="grid2">
+              <div>
+                <div style="font-size:11px; color:rgba(167,180,200,.85); font-weight:900; letter-spacing:.15px; text-transform:uppercase; margin-bottom:6px;">Readout Histogram</div>
+                <canvas id="cvReadout" class="cv short" aria-label="Readout histogram canvas">Canvas not supported.</canvas>
+              </div>
+              <div>
+                <div style="font-size:11px; color:rgba(167,180,200,.85); font-weight:900; letter-spacing:.15px; text-transform:uppercase; margin-bottom:6px;">Outcome Distribution</div>
+                <canvas id="cvDist" class="cv short" aria-label="Outcome distribution canvas">Canvas not supported.</canvas>
+              </div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div style="font-size:11px; color:rgba(167,180,200,.85); font-weight:900; letter-spacing:.15px; text-transform:uppercase; margin-bottom:6px;">Top outcomes</div>
+            <table class="mono">
+              <thead>
+                <tr>
+                  <th style="width:40%;">bitstring</th>
+                  <th style="width:30%;">p</th>
+                  <th style="width:30%;">N</th>
+                </tr>
+              </thead>
+              <tbody id="tblOut"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <!-- DIAGNOSTICS -->
+      <section id="section-diagnostics" data-section="diagnostics">
+        <div class="sectionHead">
+          <div>
+            <h2>Diagnostics</h2>
+            <p class="hint">Lasers, micromotion, camera. These are primarily visualization / UI‑workflow aids.</p>
+          </div>
+        </div>
+
+        <details class="panel" open data-title="Laser Rack" id="panelLasers">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Laser Rack</div>
+              <div class="sumSub">Lock toggles + simulated error readback + quick “kick”</div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <div class="grid2">
+              <label class="row" style="flex-direction:row;justify-content:space-between;">
+                <span>369 nm lock</span>
+                <span class="row" style="gap:8px;">
+                  <input id="chkL369" type="checkbox" checked />
+                  <span id="spL369" class="spark ok" title="lock status"></span>
+                </span>
+              </label>
+
+              <label class="row" style="flex-direction:row;justify-content:space-between;">
+                <span>399 nm lock</span>
+                <span class="row" style="gap:8px;">
+                  <input id="chkL399" type="checkbox" checked />
+                  <span id="spL399" class="spark ok"></span>
+                </span>
+              </label>
+
+              <label class="row" style="flex-direction:row;justify-content:space-between;">
+                <span>935 nm lock</span>
+                <span class="row" style="gap:8px;">
+                  <input id="chkL935" type="checkbox" checked />
+                  <span id="spL935" class="spark ok"></span>
+                </span>
+              </label>
+
+              <label class="row" style="flex-direction:row;justify-content:space-between;">
+                <span>355 nm lock</span>
+                <span class="row" style="gap:8px;">
+                  <input id="chkL355" type="checkbox" checked />
+                  <span id="spL355" class="spark ok"></span>
+                </span>
+              </label>
+
+              <label class="row" style="flex-direction:row;justify-content:space-between;">
+                <span>638 nm lock</span>
+                <span class="row" style="gap:8px;">
+                  <input id="chkL638" type="checkbox" checked />
+                  <span id="spL638" class="spark ok"></span>
+                </span>
+              </label>
+
+              <div class="kv" style="grid-column:1 / span 2;">
+                <div class="k">369 err</div><div class="v" id="txtL369Err">—</div>
+                <div class="k">399 err</div><div class="v" id="txtL399Err">—</div>
+                <div class="k">935 err</div><div class="v" id="txtL935Err">—</div>
+                <div class="k">355 err</div><div class="v" id="txtL355Err">—</div>
+                <div class="k">638 err</div><div class="v" id="txtL638Err">—</div>
+              </div>
+            </div>
+
+            <div class="row wrapRow" style="margin-top:10px;">
+              <button id="btnLockAll" class="btn good" type="button">Lock all</button>
+              <button id="btnUnlockAll" class="btn warn" type="button">Unlock all</button>
+              <button id="btnKickLasers" class="btn" type="button">Kick</button>
+            </div>
+
+            <div class="sep"></div>
+            <canvas id="cvLaser" class="cv short" aria-label="Laser diagnostic canvas">Canvas not supported.</canvas>
+          </div>
+        </details>
+
+        <details class="panel" open data-title="Micromotion" id="panelMM">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Micromotion</div>
+              <div class="sumSub">Comp knobs → sideband proxy; auto step toward optimum</div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <div class="grid2">
+              <label>Comp X (V)<input id="numCompX" type="number" value="0.00" step="0.02" /></label>
+              <label>Comp Y (V)<input id="numCompY" type="number" value="0.00" step="0.02" /></label>
+            </div>
+
+            <div class="sep"></div>
+            <div class="kv">
+              <div class="k">MM amp</div><div class="v" id="txtMMamp">—</div>
+              <div class="k">SB ratio</div><div class="v" id="txtMMratio">—</div>
+            </div>
+
+            <div class="row wrapRow" style="margin-top:10px;">
+              <button id="btnAutoMM" class="btn primary" type="button">Auto‑minimize</button>
+            </div>
+
+            <div class="sep"></div>
+            <canvas id="cvMM" class="cv short" aria-label="Micromotion diagnostic canvas">Canvas not supported.</canvas>
+          </div>
+        </details>
+
+        <details class="panel" open data-title="Camera View" id="panelCam">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Camera View</div>
+              <div class="sumSub">Render a synthetic frame after running with Sensor=Camera</div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <div class="row wrapRow">
+              <label style="flex:1; min-width:150px;">
+                Mode
+                <select id="selCamMode">
+                  <option value="counts" selected>Counts</option>
+                  <option value="image">Image</option>
+                </select>
+              </label>
+
+              <label style="flex:1; min-width:150px;">
+                Gain <span class="mono">(<span id="txtCamGain">1.0</span>×)</span>
+                <input id="rngCamGain" type="range" min="0.5" max="5" step="0.1" value="1.0" />
+              </label>
+            </div>
+
+            <div class="row wrapRow" style="margin-top:10px;">
+              <label style="flex:1; min-width:150px;">
+                Blur σ <span class="mono">(<span id="txtCamSigma">1.0</span> px)</span>
+                <input id="rngCamSigma" type="range" min="0.4" max="3.0" step="0.1" value="1.0" />
+              </label>
+
+              <label style="flex:1; min-width:150px;">
+                Pixel scale (µm/px)
+                <input id="numCamScale" type="number" value="1.2" step="0.1" />
+              </label>
+            </div>
+
+            <div class="row wrapRow" style="margin-top:10px;">
+              <label style="flex:1; min-width:150px;">
+                ROI half‑width (px)
+                <input id="numCamROI" type="number" value="14" step="1" min="4" />
+              </label>
+
+              <label style="flex:1; min-width:150px;">
+                Overlay
+                <select id="selCamOverlay">
+                  <option value="none" selected>None</option>
+                  <option value="roi">ROI</option>
+                  <option value="centroid">Centroid</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="sep"></div>
+            <canvas id="cvCam" class="cv" aria-label="Camera canvas">Canvas not supported.</canvas>
+          </div>
+        </details>
+
+        <details class="panel" data-title="Calibration Placeholder" id="panelCal">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Calibration (placeholder)</div>
+              <div class="sumSub">A stub plot + table: wire in scan routines if desired</div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <canvas id="cvCal" class="cv short" aria-label="Calibration plot canvas">Canvas not supported.</canvas>
+            <div class="sep"></div>
+            <table class="mono">
+              <thead>
+                <tr>
+                  <th style="width:22%;">type</th>
+                  <th style="width:22%;">x</th>
+                  <th style="width:22%;">y</th>
+                  <th style="width:34%;">note</th>
+                </tr>
+              </thead>
+              <tbody id="tblCal"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <!-- LOG -->
+      <section id="section-log" data-section="log">
+        <div class="sectionHead">
+          <div>
+            <h2>Log</h2>
+            <p class="hint">A compact record of actions and run summaries. Use Copy/Clear for quick sharing.</p>
+          </div>
+        </div>
+
+        <details class="panel" open data-title="Log" id="panelLog">
+          <summary>
+            <div class="sumLeft">
+              <div class="sumTitle">Console Log</div>
+              <div class="sumSub">What the “control computer” did</div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="panelBody">
+            <div class="logWrap">
+              <div class="logBar">
+                <div class="row wrapRow">
+                  <button id="btnCopyLog" class="btn" type="button">Copy</button>
+                  <button id="btnClearLog" class="btn danger" type="button">Clear</button>
+                </div>
+                <div style="color:rgba(167,180,200,.85); font-size:12px;">
+                  Tip: Filter panels from the top bar (e.g., “laser”).
+                </div>
+              </div>
+              <pre id="log" class="log"></pre>
+            </div>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <!-- RIGHT / LIVE PLOTS -->
+    <aside class="right" aria-label="Live plots">
+      <details class="panel" open data-title="Photon Trace" id="panelPhoton">
+        <summary>
+          <div class="sumLeft">
+            <div class="sumTitle">Photon Trace</div>
+            <div class="sumSub">Toy trace driven by pressure + n̄ (placeholder)</div>
+          </div>
+          <div class="chev">▾</div>
+        </summary>
+        <div class="panelBody">
+          <canvas id="cvPhoton" class="cv short" aria-label="Photon trace canvas">Canvas not supported.</canvas>
+        </div>
+      </details>
+
+      <details class="panel" open data-title="MS Diagnostic" id="panelMS">
+        <summary>
+          <div class="sumLeft">
+            <div class="sumTitle">MS Diagnostic</div>
+            <div class="sumSub">Visual proxy: shows last MS pulse & detuning heuristic</div>
+          </div>
+          <div class="chev">▾</div>
+        </summary>
+        <div class="panelBody">
+          <canvas id="cvMS" class="cv short" aria-label="MS diagnostic canvas">Canvas not supported.</canvas>
+        </div>
+      </details>
+
+      <details class="panel" data-title="Spare Plot" id="panelSpare">
+        <summary>
+          <div class="sumLeft">
+            <div class="sumTitle">Spare</div>
+            <div class="sumSub">Reserved for extra plots / scans</div>
+          </div>
+          <div class="chev">▾</div>
+        </summary>
+        <div class="panelBody">
+          <canvas class="cv short" aria-label="Spare canvas">Canvas not supported.</canvas>
+        </div>
+      </details>
+    </aside>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="dlgHelp" aria-labelledby="dlgHelpTitle">
+    <div class="dlgHd">
+      <h3 id="dlgHelpTitle">Help & shortcuts</h3>
+      <form method="dialog">
+        <button class="btn ghost" value="close" type="submit" aria-label="Close help">Close</button>
+      </form>
+    </div>
+    <div class="dlgBd">
+      <div style="margin-bottom:10px; color:rgba(232,240,251,.92); font-weight:850;">Keyboard</div>
+      <ul style="margin:0; padding-left:18px;">
+        <li><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span>: Run</li>
+        <li><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Enter</span>: Compile</li>
+        <li><span class="kbd">?</span>: Toggle this help</li>
+        <li><span class="kbd">Esc</span>: Close nav/help</li>
+      </ul>
+      <div style="height:10px"></div>
+      <div style="margin-bottom:6px; color:rgba(232,240,251,.92); font-weight:850;">Navigation</div>
+      <div>Use the left sidebar to jump between workflow stages. On mobile, open it with <span class="kbd">☰</span>.</div>
+    </div>
+    <div class="dlgFt">
+      <form method="dialog">
+        <button class="btn primary" value="close" type="submit">Got it</button>
+      </form>
+    </div>
+  </dialog>
 
   <script type="module">
     /********************
@@ -615,7 +1347,50 @@
      ********************/
     const $ = (id) => document.getElementById(id);
 
+    // FIX: robust numeric reader that allows 0 and rejects NaN
+    const num = (el, fallback) => {
+      const v = el?.valueAsNumber;
+      return Number.isFinite(v) ? v : fallback;
+    };
+
     const ui = {
+      // top controls
+      btnNav: $('btnNav'),
+      btnCloseNav: $('btnCloseNav'),
+      navOverlay: $('navOverlay'),
+      txtFilter: $('txtFilter'),
+      btnCompileTop: $('btnCompileTop'),
+      btnRunTop: $('btnRunTop'),
+      btnHelp: $('btnHelp'),
+      dlgHelp: $('dlgHelp'),
+      toast: $('toast'),
+
+      // sidebar element (for a11y toggling on mobile)
+      sidebar: $('sidebar'),
+
+      // quick actions
+      qaPump: $('qaPump'),
+      qaOven: $('qaOven'),
+      qaBake: $('qaBake'),
+      qaCool: $('qaCool'),
+      qaLoad: $('qaLoad'),
+      qaReset: $('qaReset'),
+
+      // navigation
+      nav: $('nav'),
+
+      // overview cards
+      cardState: $('cardState'),
+      cardSpam: $('cardSpam'),
+      cardPressure: $('cardPressure'),
+      cardPressureHint: $('cardPressureHint'),
+      cardIons: $('cardIons'),
+      cardNbar: $('cardNbar'),
+      cardRF: $('cardRF'),
+      cardWz: $('cardWz'),
+      btnScrollProgram: $('btnScrollProgram'),
+      btnScrollReadout: $('btnScrollReadout'),
+
       // canvases
       cvEnv: $('cvEnv'),
       cvIons: $('cvIons'),
@@ -631,6 +1406,8 @@
 
       // log
       log: $('log'),
+      btnCopyLog: $('btnCopyLog'),
+      btnClearLog: $('btnClearLog'),
 
       // status / kv
       dotReady: $('dotReady'),
@@ -737,6 +1514,29 @@
 
     const nowMs = () => performance.now();
 
+    // Resolve CSS variables for canvas colors (canvas can't reliably interpret "var(--x)")
+    const COLORS = {};
+    function refreshColors(){
+      const cs = getComputedStyle(document.documentElement);
+      const get = (k) => cs.getPropertyValue(k).trim();
+      COLORS.ok = get('--ok') || '#2fe39a';
+      COLORS.warn = get('--warn') || '#ffd27b';
+      COLORS.bad = get('--bad') || '#ff6b6b';
+      COLORS.text = get('--text') || '#e9f0fb';
+      COLORS.muted = get('--muted') || '#a7b4c8';
+      COLORS.stroke = get('--stroke') || 'rgba(255,255,255,.10)';
+    }
+    refreshColors();
+
+    let toastTimer = null;
+    function toast(msg){
+      if(!ui.toast) return;
+      ui.toast.textContent = msg;
+      ui.toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => ui.toast.classList.remove('show'), 2200);
+    }
+
     function log(msg){
       const t = new Date().toLocaleTimeString();
       ui.log.textContent += `[${t}] ${msg}\n`;
@@ -754,7 +1554,10 @@
       if(c.width !== w || c.height !== h){
         c.width = w; c.height = h;
       }
-      return c.getContext('2d');
+      const ctx = c.getContext('2d');
+      if(!ctx) return null;
+      ctx.setTransform(1,0,0,1,0,0);
+      return ctx;
     }
 
     function clear(ctx){
@@ -765,16 +1568,39 @@
     function axes(ctx, title){
       const c = ctx.canvas;
       ctx.save();
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = 'rgba(255,255,255,.08)';
+      // background
+      ctx.fillStyle = 'rgba(255,255,255,.05)';
       ctx.fillRect(0,0,c.width,c.height);
-      ctx.strokeStyle = 'rgba(255,255,255,.12)';
+      // frame
+      ctx.strokeStyle = 'rgba(255,255,255,.10)';
       ctx.lineWidth = 2;
       ctx.strokeRect(2,2,c.width-4,c.height-4);
 
-      ctx.fillStyle = 'rgba(255,255,255,.75)';
-      ctx.font = `bold ${Math.max(12, Math.floor(c.height/16))}px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillStyle = 'rgba(232,240,251,.88)';
+      ctx.font = `900 ${Math.max(12, Math.floor(c.height/16))}px ${getComputedStyle(document.body).fontFamily}`;
       ctx.fillText(title, 10, 22);
+      ctx.restore();
+    }
+
+    // FIX: frame/title overlay for image plots (e.g., camera) so putImageData doesn't wipe the header
+    function frameOverlay(ctx, title){
+      const c = ctx.canvas;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,.10)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(2,2,c.width-4,c.height-4);
+
+      const fontSize = Math.max(12, Math.floor(c.height/16));
+      ctx.font = `900 ${fontSize}px ${getComputedStyle(document.body).fontFamily}`;
+      const padX = 8, padY = 6;
+      const textW = ctx.measureText(title).width;
+      const boxW = Math.min(c.width-12, Math.ceil(textW + padX*2));
+      const boxH = Math.ceil(fontSize + padY*2);
+
+      ctx.fillStyle = 'rgba(0,0,0,.38)';
+      ctx.fillRect(6,6, boxW, boxH);
+      ctx.fillStyle = 'rgba(232,240,251,.90)';
+      ctx.fillText(title, 6+padX, 6+padY+fontSize-2);
       ctx.restore();
     }
 
@@ -793,8 +1619,9 @@
       pumpOn: false,
       bakeOn: false,
       ovenOn: false,
-      ovenSet: 0.4, // 0..1
-      pumpSpeed: 0.65, // 0..1
+      coolingOn: false,
+      ovenSet: 0.4,     // 0..1
+      pumpSpeed: 0.65,  // 0..1
 
       pressure: 1e-9,
       ovenTempC: 25,
@@ -836,14 +1663,14 @@
 
     function clamp(x, lo, hi){ return Math.min(hi, Math.max(lo, x)); }
     function randn(){
-      // Box-Muller
       let u = 0, v = 0;
       while(u === 0) u = Math.random();
       while(v === 0) v = Math.random();
       return Math.sqrt(-2.0*Math.log(u)) * Math.cos(2.0*Math.PI*v);
     }
     function poisson(lambda){
-      // small lambda: Knuth. good enough for a demo
+      lambda = Math.max(0, lambda);
+      if(lambda <= 0) return 0;
       const L = Math.exp(-lambda);
       let k = 0, p = 1;
       do { k++; p *= Math.random(); } while(p > L);
@@ -852,7 +1679,7 @@
 
     // Very rough vacuum/oven model
     function pressureUpdate(dt){
-      lab.baseP = parseFloat(ui.selBaseP.value);
+      lab.baseP = parseFloat(ui.selBaseP?.value ?? String(lab.baseP));
 
       const targetBase = lab.baseP;
       const pump = lab.pumpOn ? (0.15 + 0.85*lab.pumpSpeed) : 0.0;
@@ -862,10 +1689,9 @@
       // outgassing increases with bake and oven
       const outgas = (1e-11)*(1 + 12*bake + 18*oven);
 
-      // pump down towards max(targetBase+outgas, ...)
       const desired = Math.max(targetBase + outgas, 2e-12);
-      const kPump = 0.65 * pump;   // faster if pump on
-      const kLeak = 0.03 + 0.08*oven; // oven adds neutrals -> higher effective "leak"
+      const kPump = 0.65 * pump;
+      const kLeak = 0.03 + 0.08*oven;
       const k = kPump + kLeak;
 
       lab.pressure += (desired - lab.pressure) * (1 - Math.exp(-k*dt));
@@ -873,7 +1699,6 @@
     }
 
     function ovenUpdate(dt){
-      // thermal RC to target
       const ambient = 24;
       const target = lab.ovenOn ? (ambient + 650*lab.ovenSet) : ambient;
       const tau = lab.ovenOn ? 1.8 : 3.2; // seconds
@@ -881,10 +1706,9 @@
     }
 
     function ionsUpdate(dt){
-      // heating from background + oven neutrals, cooling when "cool" toggled
       const heatBg = 0.004 + 0.03*lab.ovenSet*(lab.ovenOn ? 1:0);
-      const heat = heatBg + (ui.numHeat.valueAsNumber || 0.03);
-      const coolPower = (lab.coolingOn ? 1.0 : 0.0);
+      const heat = heatBg + num(ui.numHeat, 0.03); // FIX: allow 0
+      const coolPower = lab.coolingOn ? 1.0 : 0.0;
       const coolRate = 0.30 * coolPower; // quanta/ms
 
       const dn = (heat - coolRate) * dt * 1e3; // dt in s -> ms
@@ -897,12 +1721,12 @@
           lab.ionsLoaded = Math.max(0, lab.ionsLoaded - 1);
           lab.ions = lab.ions.slice(0, lab.ionsLoaded);
           log(`Ion lost (pressure event). Remaining: ${lab.ionsLoaded}`);
+          toast('Ion lost (pressure event).');
         }
       }
     }
 
     function estimateWz(){
-      // purely cosmetic estimate based on RF and trap knobs
       const V = lab.rf.vpp;
       const f = lab.rf.fMHz;
       const wz = Math.sqrt(Math.max(0.01, (lab.trap.wzMHz*lab.trap.wzMHz) + 1e-4*(V-120) + 1e-3*(f-25)));
@@ -920,26 +1744,26 @@
         'Wait 50us',
         'Pi/2 10us',
         'Readout 200us'
-      ].join('\n'),
+      ].join('\n'), // FIX: real newline
       rabi: [
         'Doppler 2ms',
         'OpticalPump 200us',
         'Rabi 30us',
         'Readout 200us'
-      ].join('\n'),
+      ].join('\n'), // FIX
       ms: [
         'Doppler 2ms',
         'OpticalPump 200us',
         'MS 60us',
         'Readout 250us'
-      ].join('\n'),
+      ].join('\n'), // FIX
       readout: [
         'Readout 250us'
-      ].join('\n'),
+      ].join('\n'), // FIX
     };
 
     function parseDuration(tok){
-      // accepts e.g. "200us", "2ms", "0.5s"
+      // FIX: remove double-escaped regex pieces
       const m = String(tok).trim().match(/^([0-9]*\.?[0-9]+)\s*(us|µs|ms|s)$/i);
       if(!m) return null;
       const x = parseFloat(m[1]);
@@ -951,6 +1775,7 @@
     }
 
     function compileProgram(text){
+      // FIX: real newline/whitespace regexes
       const lines = text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
       const ops = [];
       for(const ln of lines){
@@ -969,33 +1794,27 @@
     }
 
     /********************
-     * Minimal stabilizer / measurement model
-     * (toy: generates bitstring outcomes with simple error knobs)
+     * Minimal stabilizer / measurement model (toy)
      ********************/
     class Stabilizer {
       constructor(n){
         this.n = n;
-        this.state = new Array(n).fill(0); // computational basis "hidden" state for toy
+        this.state = new Array(n).fill(0);
       }
-      reset(){
-        this.state.fill(0);
-      }
+      reset(){ this.state.fill(0); }
       apply(op){
-        // toy effects
         if(op === 'pi' || op === 'x'){
           const i = Math.floor(Math.random()*this.n);
           this.state[i] ^= 1;
         }
         if(op === 'pi/2' || op === 'h'){
-          // randomize a subset
           const p = 0.35;
           for(let i=0;i<this.n;i++){
             if(Math.random() < p) this.state[i] ^= 1;
           }
         }
         if(op === 'ms'){
-          // add correlated flips
-          const p2 = clamp(ui.numP2.valueAsNumber || 0.002, 0, 1);
+          const p2 = clamp(num(ui.numP2, 0.002), 0, 1); // FIX: allow 0
           for(let i=0;i<this.n-1;i++){
             if(Math.random() < p2){
               this.state[i] ^= 1;
@@ -1004,21 +1823,17 @@
           }
         }
       }
-      measureAll(){
-        return this.state.slice();
-      }
+      measureAll(){ return this.state.slice(); }
     }
     window.StabilizerTableau = Stabilizer;
 
     function applyDecoherence(bits, dt){
-      // dt in seconds, T2 in ms
-      const T2ms = Math.max(0.1, ui.numT2.valueAsNumber || 25);
+      const T2ms = Math.max(0.1, num(ui.numT2, 25));
       const p = 1 - Math.exp(- (dt*1e3) / T2ms);
       for(let i=0;i<bits.length;i++){
         if(Math.random() < p*0.15){ bits[i] ^= 1; }
       }
-      // independent error proxy for 2q gate infidelity
-      const p1 = clamp(ui.numP1.valueAsNumber || 0.006, 0, 1);
+      const p1 = clamp(num(ui.numP1, 0.006), 0, 1); // FIX: allow 0
       for(let i=0;i<bits.length;i++){
         if(Math.random() < p1){ bits[i] ^= 1; }
       }
@@ -1028,27 +1843,23 @@
      * Readout model
      ********************/
     function sampleCounts(bit, detT_us){
-      const brightMu = ui.numBright.valueAsNumber || 26;
-      const darkMu   = ui.numDark.valueAsNumber || 3;
-      const depumpHz = ui.numDepump.valueAsNumber || 700;
-      const pumpHz   = ui.numPump.valueAsNumber || 250;
+      const brightMu = num(ui.numBright, 26);
+      const darkMu   = num(ui.numDark, 3);
+      const depumpHz = num(ui.numDepump, 700);
+      const pumpHz   = num(ui.numPump, 250);
 
-      // effective means scale with integration time
       const t = detT_us / 200;
       let muB = brightMu * t;
       let muD = darkMu * t;
 
-      // depump/pump: mix bright/dark
       const pBD = 1 - Math.exp(-(depumpHz)*(detT_us*1e-6));
       const pDB = 1 - Math.exp(-(pumpHz)*(detT_us*1e-6));
 
-      if(bit === 1){ // bright
-        // depump towards dark
+      if(bit === 1){
         const mix = pBD;
         const mu = (1-mix)*muB + mix*muD;
         return poisson(Math.max(0.05, mu));
       }else{
-        // pump towards bright
         const mix = pDB;
         const mu = (1-mix)*muD + mix*muB;
         return poisson(Math.max(0.05, mu));
@@ -1056,15 +1867,13 @@
     }
 
     function classifyCount(k){
-      const thr = ui.numThresh.valueAsNumber || 12;
-      const mode = (ui.selClassifier.value || 'threshold').toLowerCase();
+      const thr = num(ui.numThresh, 12); // FIX: allow 0
+      const mode = (ui.selClassifier?.value || 'threshold').toLowerCase();
       if(mode === 'llr'){
-        const llr = ui.rngLLR.valueAsNumber || 0;
-        // treat llr as threshold shift in this toy
+        const llr = num(ui.rngLLR, 0);
         return (k >= (thr + llr)) ? 1 : 0;
       }
       if(mode === 'naivebayes'){
-        // crude: a soft threshold using a logistic
         const s = 1/(1 + Math.exp(-(k - thr)/2));
         return (Math.random() < s) ? 1 : 0;
       }
@@ -1072,7 +1881,6 @@
     }
 
     function addCrosstalk(bits, xtalk){
-      // if a bright ion, slightly increases chance neighbor is classified bright
       if(bits.length <= 1) return bits;
       const out = bits.slice();
       for(let i=0;i<bits.length;i++){
@@ -1088,23 +1896,24 @@
      * Run shots
      ********************/
     function runShots(ops){
-      const n = clamp(ui.numQ.valueAsNumber || 4, 1, 16) | 0;
-      const shots = clamp(ui.numShots.valueAsNumber || 2000, 1, 50000) | 0;
-      const xtalk = clamp(ui.numXtalk.valueAsNumber || 0.05, 0, 1);
+      const n = clamp(num(ui.numQ, 4), 1, 16) | 0;
+      const shots = clamp(num(ui.numShots, 2000), 1, 50000) | 0;
+      const xtalk = clamp(num(ui.numXtalk, 0.05), 0, 1); // FIX: allow 0
 
-      // load ions count in "hardware" if not present
-      lab.ionsLoaded = n;
-      lab.ions = makeIonChain(n);
+      // Ensure ion chain exists (UX: auto-load to match run settings)
+      if(lab.ionsLoaded !== n){
+        lab.ionsLoaded = n;
+        lab.ions = makeIonChain(n);
+        log(`Auto-load: matched hardware ion count to n=${n}`);
+      }
 
       const tab = new Stabilizer(n);
       tab.reset();
 
-      // program duration
+      // Apply toy unitary effects once (keeps demo fast)
       const progT = ops.reduce((s,o)=>s+o.dur,0);
-      // apply toy unitary effects
       for(const o of ops){
         if(o.op === 'doppler' || o.op === 'opticalpump'){
-          // cooling/pumping reduces nbar a bit
           lab.nbar = Math.max(0.02, lab.nbar - 0.20);
         }else if(o.op === 'wait'){
           applyDecoherence(tab.state, o.dur);
@@ -1113,15 +1922,13 @@
           applyDecoherence(tab.state, o.dur);
         }else if(o.op === 'pi/2'){
           tab.apply('pi/2');
-        }else if(o.op === 'pi' || o.op === 'x'){
-          tab.apply('pi');
-        }else if(o.op === 'rabi'){
+        }else if(o.op === 'pi' || o.op === 'x' || o.op === 'rabi'){
           tab.apply('pi');
         }
       }
 
-      const detT_us = ui.numDetT.valueAsNumber || 200;
-      const sensor = (ui.selSensor.value || 'pmts').toLowerCase();
+      const detT_us = num(ui.numDetT, 200);
+      const sensor = (ui.selSensor?.value || 'pmts').toLowerCase();
 
       const outcomeCounts = new Map();
       const brightCounts = [];
@@ -1130,26 +1937,21 @@
       let totalErr = 0;
 
       for(let s=0; s<shots; s++){
-        // hidden ideal bitstring
         const ideal = tab.measureAll().slice();
 
-        // sample physical photon counts per ion
         const counts = new Array(n);
         for(let i=0;i<n;i++){
           counts[i] = sampleCounts(ideal[i], detT_us);
           if(ideal[i] === 1) brightCounts.push(counts[i]); else darkCounts.push(counts[i]);
         }
 
-        // classify
         let measured = counts.map(classifyCount);
         measured = addCrosstalk(measured, xtalk);
 
-        // camera mode: store last frame statistics
         if(sensor === 'camera'){
           lab.cam.lastCounts = counts.slice();
         }
 
-        // error vs ideal
         for(let i=0;i<n;i++){
           if(measured[i] !== ideal[i]) totalErr++;
         }
@@ -1158,13 +1960,11 @@
         outcomeCounts.set(bits, (outcomeCounts.get(bits)||0) + 1);
       }
 
-      // SPAM estimate (bit error)
       const spam = totalErr / (shots*n);
       lab.readout.lastSpam = spam;
       lab.readout.lastBrightCounts = brightCounts;
       lab.readout.lastDarkCounts = darkCounts;
 
-      // normalize distribution
       const outcomes = [...outcomeCounts.entries()]
         .map(([bits, c]) => ({bits, c, p: c/shots}))
         .sort((a,b)=> b.c - a.c);
@@ -1173,12 +1973,13 @@
       drawDist(outcomes);
       drawReadout(brightCounts, darkCounts);
 
-      // update camera with synthetic image based on last counts
       if(sensor === 'camera'){
         makeCameraFrameFromCounts(lab.cam.lastCounts || new Array(n).fill(0));
       }
 
-      log(`Run: n=${n}, shots=${shots}, T≈${(progT*1e3).toFixed(2)} ms, SPAM≈${(spam*100).toFixed(2)}%`);
+      const msg = `Run: n=${n}, shots=${shots}, T≈${(progT*1e3).toFixed(2)} ms, SPAM≈${(spam*100).toFixed(2)}%`;
+      log(msg);
+      toast(msg);
     }
 
     function makeIonChain(n){
@@ -1205,14 +2006,12 @@
       const w = ctx.canvas.width;
       const h = ctx.canvas.height;
 
-      // image buffer (grayscale)
       const img = new Float32Array(w*h);
       img.fill(0);
 
       const sigma = lab.cam.sigma;
       const gain = lab.cam.gain;
 
-      // map ion chain into camera coordinates
       const cx = w*0.5;
       const cy = h*0.52;
       const pitch = Math.min(w,h) / Math.max(10, n+2);
@@ -1238,12 +2037,12 @@
         }
       }
 
-      // background + shot noise
+      // background + mild camera noise
       for(let i=0;i<img.length;i++){
         img[i] += 2 + 0.12*Math.abs(randn());
       }
 
-      // compute centroid in ROI (optional)
+      // centroid in ROI (optional)
       const roiHalf = Math.max(4, lab.cam.roiHalf|0);
       const roiX0 = Math.max(0, (cx - roiHalf)|0);
       const roiX1 = Math.min(w-1, (cx + roiHalf)|0);
@@ -1261,7 +2060,6 @@
       }
       lab.cam.centroid = (sI>0) ? {x:sX/sI, y:sY/sI} : null;
 
-      // store for renderer
       lab.cam.lastImage = img;
     }
 
@@ -1275,8 +2073,6 @@
       axes(ctx, 'Vacuum / Oven');
 
       const c = ctx.canvas;
-
-      // Plot log10 pressure over time (simple gauge)
       const p = lab.pressure;
       const logp = Math.log10(p);
       const lo = -12, hi = -8;
@@ -1290,12 +2086,11 @@
       ctx.lineTo(c.width-20, c.height*0.55);
       ctx.stroke();
 
-      // tick labels
       ctx.fillStyle = 'rgba(255,255,255,.55)';
       ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
       for(let L=-12; L<=-8; L++){
         const xx = map(L, lo, hi, 20, c.width-20);
-        ctx.globalAlpha = 0.55;
+        ctx.globalAlpha = 0.50;
         ctx.beginPath();
         ctx.moveTo(xx, c.height*0.55-8);
         ctx.lineTo(xx, c.height*0.55+8);
@@ -1304,8 +2099,7 @@
         ctx.fillText(`1e${L}`, xx-14, c.height*0.55+26);
       }
 
-      // pointer
-      const col = (p < 3e-11) ? 'var(--ok)' : (p < 2e-10) ? 'var(--warn)' : 'var(--bad)';
+      const col = (p < 3e-11) ? COLORS.ok : (p < 2e-10) ? COLORS.warn : COLORS.bad;
       ctx.strokeStyle = col;
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -1313,7 +2107,6 @@
       ctx.lineTo(x, c.height*0.55+18);
       ctx.stroke();
 
-      // oven bar
       const temp = lab.ovenTempC;
       const t0 = 20, t1 = 700;
       const frac = clamp((temp - t0)/(t1-t0), 0, 1);
@@ -1340,6 +2133,7 @@
 
       const y = c.height*0.55;
       const left = 30, right = c.width-30;
+
       ctx.save();
       ctx.strokeStyle = 'rgba(255,255,255,.16)';
       ctx.lineWidth = 2;
@@ -1358,13 +2152,14 @@
 
       for(let i=0;i<n;i++){
         const x = map(i, 0, Math.max(1,n-1), left, right);
-        // brightness proxy ~ exp(-nbar)
         const b = Math.exp(-lab.nbar/6);
         const r = 10;
+
         ctx.beginPath();
         ctx.fillStyle = `rgba(47,227,154,${0.25 + 0.55*b})`;
         ctx.arc(x,y,r,0,Math.PI*2);
         ctx.fill();
+
         ctx.strokeStyle = 'rgba(255,255,255,.12)';
         ctx.stroke();
 
@@ -1394,6 +2189,16 @@
       }
 
       const total = ops.reduce((s,o)=>s+o.dur,0);
+
+      // FIX: avoid division by zero / NaNs
+      if(!(total > 0)){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText('Program duration is 0 (only idle/barrier ops?).', 12, 50);
+        ctx.restore();
+        return;
+      }
+
       const x0 = 20, x1 = c.width-20;
       const y0 = 55, h = c.height-70;
       let t = 0;
@@ -1408,11 +2213,13 @@
         const isRead = op === 'readout';
         const isCool = (op==='doppler' || op==='opticalpump');
         const isGate = (op==='pi' || op==='pi/2' || op==='ms' || op==='rabi');
-        const col = isRead ? 'rgba(123,221,255,.35)' : isCool ? 'rgba(255,210,123,.22)' : isGate ? 'rgba(47,227,154,.22)' : 'rgba(255,255,255,.12)';
+        const col = isRead ? 'rgba(123,221,255,.35)'
+                  : isCool ? 'rgba(255,210,123,.22)'
+                  : isGate ? 'rgba(47,227,154,.22)'
+                  : 'rgba(255,255,255,.12)';
 
         ctx.fillStyle = col;
         ctx.fillRect(xx0, y0, Math.max(1, xx1-xx0), h);
-
         ctx.strokeStyle = 'rgba(255,255,255,.12)';
         ctx.strokeRect(xx0, y0, Math.max(1, xx1-xx0), h);
 
@@ -1445,17 +2252,16 @@
       const c = ctx.canvas;
       ctx.save();
 
-      // update SPAM text
       if(lab.readout.lastSpam != null){
         ui.txtSpam.textContent = `${(lab.readout.lastSpam*100).toFixed(2)}%`;
       }else{
         ui.txtSpam.textContent = '—';
       }
 
-      const detT = ui.numDetT.valueAsNumber || 200;
-      const muB = (ui.numBright.valueAsNumber || 26) * (detT/200);
-      const muD = (ui.numDark.valueAsNumber || 3) * (detT/200);
-      const thr = ui.numThresh.valueAsNumber || 12;
+      const detT = num(ui.numDetT, 200);
+      const muB = num(ui.numBright, 26) * (detT/200);
+      const muD = num(ui.numDark, 3) * (detT/200);
+      const thr = num(ui.numThresh, 12);
       ui.txtCountsPhysical.innerHTML = `Pois(μ<sub>b</sub>≈${muB.toFixed(1)}), Pois(μ<sub>d</sub>≈${muD.toFixed(1)}), thr=${thr}`;
 
       if(!brightCounts?.length && !darkCounts?.length){
@@ -1487,7 +2293,6 @@
       const px0 = 20, px1 = c.width-20;
       const py0 = 48, py1 = c.height-20;
 
-      // threshold line
       const tx = map(thr, 0, maxC, px0, px1);
       ctx.strokeStyle = 'rgba(255,255,255,.35)';
       ctx.lineWidth = 2;
@@ -1496,19 +2301,16 @@
       ctx.lineTo(tx, py1);
       ctx.stroke();
 
-      // draw bars
       for(let i=0;i<bins;i++){
         const x0 = map(i, 0, bins, px0, px1);
         const x1 = map(i+1, 0, bins, px0, px1);
         const yb = map(hb[i], 0, ymax, py1, py0);
         const yd = map(hd[i], 0, ymax, py1, py0);
 
-        // dark (red-ish)
-        ctx.fillStyle = 'rgba(255,107,107,.35)';
+        ctx.fillStyle = 'rgba(255,107,107,.28)';
         ctx.fillRect(x0, yd, Math.max(1, x1-x0-1), py1-yd);
 
-        // bright (green-ish)
-        ctx.fillStyle = 'rgba(47,227,154,.30)';
+        ctx.fillStyle = 'rgba(47,227,154,.26)';
         ctx.fillRect(x0, yb, Math.max(1, x1-x0-1), py1-yb);
       }
 
@@ -1549,7 +2351,7 @@
         const x1 = map(i+1, 0, top.length, px0, px1);
         const y = map(o.p, 0, ymax, py1, py0);
 
-        ctx.fillStyle = 'rgba(123,221,255,.30)';
+        ctx.fillStyle = 'rgba(123,221,255,.28)';
         ctx.fillRect(x0, y, Math.max(2, x1-x0-2), py1-y);
 
         ctx.fillStyle = 'rgba(255,255,255,.75)';
@@ -1574,22 +2376,20 @@
       if(!ctx) return;
 
       clear(ctx);
-      axes(ctx, 'Camera');
-
-      const c = ctx.canvas;
-      ctx.save();
 
       const img = lab.cam.lastImage;
       if(!img){
+        axes(ctx, 'Camera');
         ctx.fillStyle = 'rgba(255,255,255,.55)';
         ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
         ctx.fillText('Run with Sensor=Camera to render a frame.', 12, 52);
-        ctx.restore();
         return;
       }
 
+      // FIX: draw image FIRST, then overlay title/frame so putImageData doesn't erase it
+      const c = ctx.canvas;
       const w = c.width, h = c.height;
-      // normalize to 0..255
+
       let vmax = 0;
       for(let i=0;i<img.length;i++) vmax = Math.max(vmax, img[i]);
       vmax = Math.max(1, vmax);
@@ -1604,13 +2404,12 @@
       }
       ctx.putImageData(imageData, 0, 0);
 
-      // overlays
       const cx = w*0.5;
       const cy = h*0.52;
       const roiHalf = Math.max(4, lab.cam.roiHalf|0);
 
       if(lab.cam.overlay === 'roi'){
-        ctx.strokeStyle = 'rgba(255,255,255,.55)';
+        ctx.strokeStyle = 'rgba(255,255,255,.70)';
         ctx.lineWidth = 2;
         ctx.strokeRect(cx-roiHalf, cy-roiHalf, 2*roiHalf, 2*roiHalf);
       }
@@ -1626,7 +2425,7 @@
         ctx.stroke();
       }
 
-      ctx.restore();
+      frameOverlay(ctx, 'Camera');
     }
 
     function drawLaserDiag(){
@@ -1652,7 +2451,6 @@
         const yMid = (py0+py1)/2;
         const y = map(e, -ymax, ymax, py1, py0);
 
-        // axis
         ctx.strokeStyle = 'rgba(255,255,255,.12)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -1660,7 +2458,6 @@
         ctx.lineTo(x1-6, yMid);
         ctx.stroke();
 
-        // bar from mid to y
         ctx.strokeStyle = lab.lasers[k].lock ? 'rgba(47,227,154,.8)' : 'rgba(255,107,107,.85)';
         ctx.lineWidth = 6;
         ctx.beginPath();
@@ -1685,13 +2482,10 @@
       const c = ctx.canvas;
       ctx.save();
 
-      // show simple curve ratio vs comp distance from optimum (0,0)
-      const xOpt=0, yOpt=0;
-      const dx = lab.mm.compX - xOpt;
-      const dy = lab.mm.compY - yOpt;
+      const dx = lab.mm.compX;
+      const dy = lab.mm.compY;
       const r = Math.sqrt(dx*dx + dy*dy);
 
-      // amplitude increases with r
       lab.mm.amp = 0.10 + 0.85*(1 - Math.exp(-r*r/0.20));
       lab.mm.ratio = 0.02 + 0.60*(1 - Math.exp(-r*r/0.15));
 
@@ -1701,7 +2495,6 @@
       const px0=20, px1=c.width-20;
       const py0=50, py1=c.height-18;
 
-      // draw ratio bar
       const frac = clamp(lab.mm.ratio,0,1);
       const w = (px1-px0)*frac;
       ctx.fillStyle='rgba(255,210,123,.25)';
@@ -1742,7 +2535,6 @@
       const px0=30, px1=c.width-20;
       const py0=50, py1=c.height-20;
 
-      // axes
       ctx.strokeStyle='rgba(255,255,255,.15)';
       ctx.lineWidth=2;
       ctx.beginPath();
@@ -1752,7 +2544,6 @@
       ctx.lineTo(px0, py0);
       ctx.stroke();
 
-      // points
       ctx.fillStyle='rgba(123,221,255,.85)';
       for(const p of pts){
         const x = map(p.x, xmin, xmax, px0, px1);
@@ -1778,7 +2569,6 @@
       const c = ctx.canvas;
       ctx.save();
 
-      // draw a rolling squiggle based on pressure + nbar
       const px0=20, px1=c.width-20;
       const py0=48, py1=c.height-20;
 
@@ -1802,6 +2592,94 @@
       ctx.fillStyle='rgba(255,255,255,.65)';
       ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
       ctx.fillText(`pressure=${lab.pressure.toExponential(2)} mbar`, px0, py0+12);
+
+      ctx.restore();
+    }
+
+    function drawMS(){
+      const ctx = ensureCanvas(ui.cvMS);
+      if(!ctx) return;
+      clear(ctx);
+      axes(ctx, 'MS Diagnostic');
+
+      const c = ctx.canvas;
+      ctx.save();
+
+      const ops = lab.program.compiled || [];
+      const msOp = [...ops].reverse().find(o => o.op === 'ms');
+      const px0=20, px1=c.width-20;
+      const py0=48, py1=c.height-20;
+
+      ctx.strokeStyle = 'rgba(255,255,255,.10)';
+      ctx.lineWidth = 1;
+      for(let k=0;k<=6;k++){
+        const y = map(k,0,6,py0,py1);
+        ctx.beginPath(); ctx.moveTo(px0,y); ctx.lineTo(px1,y); ctx.stroke();
+      }
+
+      if(!msOp){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText('No MS pulse in program. Add “MS 60us” to visualize.', 12, 72);
+        ctx.restore();
+        return;
+      }
+
+      // Heuristic: show a phase-space loop with closure depending on duration vs an arbitrary detuning
+      const tGate = msOp.dur;               // seconds
+      const delta = 12e3;                   // Hz (toy)
+      const phase = 2*Math.PI*delta*tGate;  // rad
+      const closure = Math.abs(Math.sin(phase/2)); // 0..1
+      const fidelityProxy = clamp(1 - 0.9*closure - 0.06*lab.nbar/10, 0, 1);
+
+      const cx = (px0+px1)*0.40;
+      const cy = (py0+py1)*0.56;
+      const R = Math.min(px1-px0, py1-py0)*0.22;
+
+      // axes
+      ctx.strokeStyle='rgba(255,255,255,.25)';
+      ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(cx-R*1.6, cy); ctx.lineTo(cx+R*1.6, cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy-R*1.6); ctx.lineTo(cx, cy+R*1.6); ctx.stroke();
+
+      // loop
+      ctx.strokeStyle='rgba(123,221,255,.85)';
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      const N=180;
+      for(let i=0;i<=N;i++){
+        const tt = (i/N)*tGate;
+        const ph = 2*Math.PI*delta*tt;
+        const aRe = (1 - Math.cos(ph));
+        const aIm = (-Math.sin(ph));
+        const x = cx + aRe*R;
+        const y = cy - aIm*R;
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+
+      // endpoint
+      const aReE = (1 - Math.cos(phase));
+      const aImE = (-Math.sin(phase));
+      ctx.fillStyle='rgba(255,210,123,.95)';
+      ctx.beginPath(); ctx.arc(cx + aReE*R, cy - aImE*R, 4, 0, Math.PI*2); ctx.fill();
+
+      // info box
+      const bx = (px0+px1)*0.62;
+      const by = py0 + 10;
+      ctx.fillStyle='rgba(0,0,0,.35)';
+      ctx.fillRect(bx, by, (px1-bx), (py1-by));
+      ctx.strokeStyle='rgba(255,255,255,.12)';
+      ctx.strokeRect(bx, by, (px1-bx), (py1-by));
+
+      ctx.fillStyle='rgba(232,240,251,.92)';
+      ctx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
+      const line = (s, y) => ctx.fillText(s, bx+10, y);
+      line(`MS dur: ${(tGate*1e6).toFixed(1)} µs`, by+24);
+      line(`δ (toy): ${(delta/1e3).toFixed(1)} kHz`, by+44);
+      line(`closure: ${closure.toFixed(3)}`, by+64);
+      line(`fid. proxy: ${(100*fidelityProxy).toFixed(1)}%`, by+84);
+      line(`n̄: ${lab.nbar.toFixed(2)}`, by+104);
 
       ctx.restore();
     }
@@ -1841,18 +2719,42 @@
     }
 
     /********************
-     * UI bindings
+     * UI bindings & navigation
      ********************/
-    function setReady(ok, msg){
-      ui.dotReady.style.background = ok ? 'var(--ok)' : 'var(--warn)';
-      ui.dotReady.style.boxShadow = ok ? '0 0 10px rgba(47,227,154,.35)' : '0 0 10px rgba(255,210,123,.35)';
+    function setReady(kind, msg){
+      // kind: 'ok'|'warn'|'bad'
+      const col = (kind==='ok') ? COLORS.ok : (kind==='bad') ? COLORS.bad : COLORS.warn;
+      ui.dotReady.style.background = col;
+      ui.dotReady.style.boxShadow = (kind==='ok')
+        ? '0 0 12px rgba(47,227,154,.35)'
+        : (kind==='bad')
+          ? '0 0 12px rgba(255,107,107,.35)'
+          : '0 0 12px rgba(255,210,123,.35)';
       ui.readyTxt.textContent = msg;
+      ui.cardState.textContent = msg;
+    }
+
+    function syncToggles(){
+      const set = (btn, on) => {
+        if(!btn) return;
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      };
+      set(ui.btnPump, lab.pumpOn);
+      set(ui.btnBake, lab.bakeOn);
+      set(ui.btnOven, lab.ovenOn);
+      set(ui.btnCool, lab.coolingOn);
+
+      // quick actions mirror
+      set(ui.qaPump, lab.pumpOn);
+      set(ui.qaBake, lab.bakeOn);
+      set(ui.qaOven, lab.ovenOn);
+      set(ui.qaCool, lab.coolingOn);
     }
 
     function syncText(){
       ui.txtPump.textContent = String(Math.round(lab.pumpSpeed*100));
       ui.txtOvenSet.textContent = String(Math.round(lab.ovenSet*100));
-      ui.txtLLR.textContent = (ui.rngLLR.valueAsNumber || 0).toFixed(1);
+      ui.txtLLR.textContent = (num(ui.rngLLR, 0)).toFixed(1);
       ui.txtCamGain.textContent = (lab.cam.gain).toFixed(1);
       ui.txtCamSigma.textContent = (lab.cam.sigma).toFixed(1);
 
@@ -1862,10 +2764,22 @@
       ui.kvWz.textContent = `${estimateWz().toFixed(2)} MHz`;
       ui.kvIons.textContent = `${lab.ionsLoaded}`;
       ui.kvNbar.textContent = `${lab.nbar.toFixed(2)}`;
+
+      // sidebar summary cards
+      ui.cardPressure.textContent = lab.pressure.toExponential(2) + ' mbar';
+      ui.cardPressureHint.textContent =
+        (lab.pressure < 3e-11) ? 'UHV region' :
+        (lab.pressure < 2e-10) ? 'OK-ish; collisions possible' :
+        'High pressure; expect loss';
+      ui.cardIons.textContent = `${lab.ionsLoaded} ions`;
+      ui.cardNbar.textContent = `n̄ ≈ ${lab.nbar.toFixed(2)}`;
+      ui.cardRF.textContent = `${lab.rf.fMHz.toFixed(1)} MHz @ ${lab.rf.vpp.toFixed(0)} Vpp`;
+      ui.cardWz.textContent = `ωz ≈ ${estimateWz().toFixed(2)} MHz`;
+
+      ui.cardSpam.textContent = (lab.readout.lastSpam == null) ? '—' : `${(lab.readout.lastSpam*100).toFixed(2)}%`;
     }
 
     function laserStep(dt){
-      // random walk error, pulled to 0 if locked
       const keys = ['L369','L399','L935','L355','L638'];
       for(const k of keys){
         const L = lab.lasers[k];
@@ -1873,17 +2787,15 @@
         L.err += walk;
         const pull = L.lock ? 1.5 : 0.10;
         L.err += (-L.err) * (1 - Math.exp(-pull*dt));
-        // occasional lock loss if unlocked
         if(!L.lock && Math.random() < 0.02*dt){
-          // stay unlocked; bigger drift
           L.err += 0.6*randn();
         }
       }
 
-      // UI text + sparks
       function upd(k, txt, sp){
         const L = lab.lasers[k];
-        txt.textContent = `${L.err.toFixed(3)}`;
+        if(txt) txt.textContent = `${L.err.toFixed(3)}`;
+        if(!sp) return;
         const a = Math.abs(L.err);
         const ok = L.lock && a < 0.35;
         const warn = L.lock && a >= 0.35 && a < 0.8;
@@ -1899,54 +2811,198 @@
       upd('L638', ui.txtL638Err, ui.spL638);
     }
 
+    function openNav(open){
+      const mobile = window.matchMedia('(max-width: 980px)').matches;
+
+      // On desktop the sidebar is always visible; force-close any mobile overlay state
+      if(!mobile){
+        document.body.classList.remove('navOpen');
+        ui.btnNav?.setAttribute('aria-expanded', 'false');
+        ui.navOverlay?.setAttribute('aria-hidden', 'true');
+        ui.sidebar?.removeAttribute('aria-hidden');
+        return;
+      }
+
+      const isOpen = !!open;
+      document.body.classList.toggle('navOpen', isOpen);
+      ui.btnNav?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      ui.navOverlay?.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      ui.sidebar?.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+
+      if(isOpen){
+        (ui.nav?.querySelector('a') || ui.btnCloseNav)?.focus?.();
+      }else{
+        ui.btnNav?.focus?.();
+      }
+    }
+
+    function highlightNavActive(id){
+      const links = ui.nav?.querySelectorAll('a') || [];
+      links.forEach(a => a.classList.remove('active'));
+      const match = [...links].find(a => a.getAttribute('href') === `#${id}`);
+      if(match) match.classList.add('active');
+    }
+
+    function setupScrollSpy(){
+      const sections = document.querySelectorAll('section[data-section]');
+      if(!sections.length || !('IntersectionObserver' in window)) return;
+
+      const obs = new IntersectionObserver((entries) => {
+        const best = entries
+          .filter(e => e.isIntersecting)
+          .sort((a,b) => (b.intersectionRatio - a.intersectionRatio))[0];
+        if(best?.target?.id){
+          highlightNavActive(best.target.id);
+        }
+      }, { root: null, threshold: [0.15, 0.25, 0.35, 0.5] });
+
+      sections.forEach(s => obs.observe(s));
+      highlightNavActive('section-overview');
+    }
+
     function bindControls(){
+      // navigation / overlays
+      ui.btnNav?.addEventListener('click', () => openNav(!document.body.classList.contains('navOpen')));
+      ui.btnCloseNav?.addEventListener('click', () => openNav(false));
+      ui.navOverlay?.addEventListener('click', () => openNav(false));
+
+      // close nav on link click (mobile UX)
+      ui.nav?.addEventListener('click', (e) => {
+        const a = e.target.closest?.('a');
+        if(a) openNav(false);
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape'){
+          openNav(false);
+          if(ui.dlgHelp?.open) ui.dlgHelp.close();
+        }
+      });
+
+      // filter panels
+      function applyFilter(){
+        const q = (ui.txtFilter?.value || '').trim().toLowerCase();
+        const panels = document.querySelectorAll('details.panel[data-title]');
+        panels.forEach(p => {
+          const title = (p.getAttribute('data-title') || '').toLowerCase();
+          const show = (!q) || title.includes(q) || p.textContent.toLowerCase().includes(q);
+          p.style.display = show ? '' : 'none';
+        });
+      }
+      ui.txtFilter?.addEventListener('input', applyFilter);
+
+      // “go to” buttons
+      ui.btnScrollProgram?.addEventListener('click', () => document.querySelector('#section-program')?.scrollIntoView({behavior:'smooth'}));
+      ui.btnScrollReadout?.addEventListener('click', () => document.querySelector('#panelReadout')?.scrollIntoView({behavior:'smooth'}));
+
+      // ensure canvases resize when panels open/close
+      document.querySelectorAll('details.panel').forEach(d => {
+        d.addEventListener('toggle', () => window.dispatchEvent(new Event('resize')));
+      });
+
+      // wire top compile/run buttons
+      ui.btnCompileTop?.addEventListener('click', () => ui.btnCompile?.click());
+      ui.btnRunTop?.addEventListener('click', () => ui.btnRun?.click());
+
+      // help dialog
+      const toggleHelp = () => {
+        if(!ui.dlgHelp) return;
+        if(ui.dlgHelp.open) ui.dlgHelp.close();
+        else ui.dlgHelp.showModal();
+      };
+      ui.btnHelp?.addEventListener('click', toggleHelp);
+      document.addEventListener('keydown', (e) => {
+        if(e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey){
+          e.preventDefault();
+          toggleHelp();
+        }
+        if(e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.shiftKey){
+          e.preventDefault();
+          ui.btnRun?.click();
+        }
+        if(e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.shiftKey){
+          e.preventDefault();
+          ui.btnCompile?.click();
+        }
+      });
+
+      // quick actions click-through
+      ui.qaPump?.addEventListener('click', () => ui.btnPump?.click());
+      ui.qaBake?.addEventListener('click', () => ui.btnBake?.click());
+      ui.qaOven?.addEventListener('click', () => ui.btnOven?.click());
+      ui.qaCool?.addEventListener('click', () => ui.btnCool?.click());
+      ui.qaLoad?.addEventListener('click', () => ui.btnLoad?.click());
+      ui.qaReset?.addEventListener('click', () => ui.btnReset?.click());
+
       // sliders
-      ui.rngPump.addEventListener('input', () => { lab.pumpSpeed = ui.rngPump.valueAsNumber/100; syncText(); });
-      ui.rngOven.addEventListener('input', () => { lab.ovenSet = ui.rngOven.valueAsNumber/100; syncText(); });
+      ui.rngPump?.addEventListener('input', () => { lab.pumpSpeed = num(ui.rngPump, 65)/100; syncText(); });
+      ui.rngOven?.addEventListener('input', () => { lab.ovenSet = num(ui.rngOven, 40)/100; syncText(); });
 
       // trap numbers
       function syncTrap(){
-        lab.rf.fMHz = ui.numRFf.valueAsNumber || lab.rf.fMHz;
-        lab.rf.vpp = ui.numRFv.valueAsNumber || lab.rf.vpp;
-        lab.trap.wzMHz = ui.numWz.valueAsNumber || lab.trap.wzMHz;
-        lab.trap.wrMHz = ui.numWr.valueAsNumber || lab.trap.wrMHz;
-        lab.trap.BmT = ui.numB.valueAsNumber || lab.trap.BmT;
+        lab.rf.fMHz = num(ui.numRFf, lab.rf.fMHz);
+        lab.rf.vpp = num(ui.numRFv, lab.rf.vpp);
+        lab.trap.wzMHz = num(ui.numWz, lab.trap.wzMHz);
+        lab.trap.wrMHz = num(ui.numWr, lab.trap.wrMHz);
+        lab.trap.BmT = num(ui.numB, lab.trap.BmT);
         syncText();
       }
-      [ui.numRFf, ui.numRFv, ui.numWz, ui.numWr, ui.numB].forEach(el => el.addEventListener('input', syncTrap));
+      [ui.numRFf, ui.numRFv, ui.numWz, ui.numWr, ui.numB].forEach(el => el?.addEventListener('input', syncTrap));
 
       // readout
-      ui.rngLLR.addEventListener('input', ()=>{ ui.txtLLR.textContent = (ui.rngLLR.valueAsNumber||0).toFixed(1); });
+      ui.rngLLR?.addEventListener('input', ()=>{ ui.txtLLR.textContent = (num(ui.rngLLR, 0)).toFixed(1); });
 
       // camera
-      ui.selCamMode.addEventListener('change', ()=>{ lab.cam.mode = ui.selCamMode.value; });
-      ui.rngCamGain.addEventListener('input', ()=>{ lab.cam.gain = ui.rngCamGain.valueAsNumber; ui.txtCamGain.textContent = lab.cam.gain.toFixed(1); });
-      ui.rngCamSigma.addEventListener('input', ()=>{ lab.cam.sigma = ui.rngCamSigma.valueAsNumber; ui.txtCamSigma.textContent = lab.cam.sigma.toFixed(1); });
-      ui.numCamScale.addEventListener('input', ()=>{ lab.cam.scaleUmPerPx = ui.numCamScale.valueAsNumber || 1.2; });
-      ui.numCamROI.addEventListener('input', ()=>{ lab.cam.roiHalf = ui.numCamROI.valueAsNumber || 14; });
-      ui.selCamOverlay.addEventListener('change', ()=>{ lab.cam.overlay = ui.selCamOverlay.value; });
+      ui.selCamMode?.addEventListener('change', ()=>{ lab.cam.mode = ui.selCamMode.value; });
+      ui.rngCamGain?.addEventListener('input', ()=>{ lab.cam.gain = num(ui.rngCamGain, 1.0); ui.txtCamGain.textContent = lab.cam.gain.toFixed(1); });
+      ui.rngCamSigma?.addEventListener('input', ()=>{ lab.cam.sigma = num(ui.rngCamSigma, 1.0); ui.txtCamSigma.textContent = lab.cam.sigma.toFixed(1); });
+      ui.numCamScale?.addEventListener('input', ()=>{ lab.cam.scaleUmPerPx = num(ui.numCamScale, 1.2); });
+      ui.numCamROI?.addEventListener('input', ()=>{ lab.cam.roiHalf = num(ui.numCamROI, 14); });
+      ui.selCamOverlay?.addEventListener('change', ()=>{ lab.cam.overlay = ui.selCamOverlay.value; });
 
       // vacuum buttons
-      ui.btnPump.addEventListener('click', ()=>{ lab.pumpOn = !lab.pumpOn; log(`Pump ${lab.pumpOn?'ON':'OFF'}`); });
-      ui.btnBake.addEventListener('click', ()=>{ lab.bakeOn = !lab.bakeOn; log(`Bake ${lab.bakeOn?'ON':'OFF'}`); });
-      ui.btnOven.addEventListener('click', ()=>{ lab.ovenOn = !lab.ovenOn; log(`Oven ${lab.ovenOn?'ON':'OFF'}`); });
-      ui.btnLoad.addEventListener('click', ()=>{
-        const n = clamp(ui.numQ.valueAsNumber || 4, 1, 16)|0;
+      ui.btnPump?.addEventListener('click', ()=>{
+        lab.pumpOn = !lab.pumpOn;
+        log(`Pump ${lab.pumpOn?'ON':'OFF'}`);
+        toast(`Pump ${lab.pumpOn?'ON':'OFF'}`);
+        syncToggles();
+      });
+      ui.btnBake?.addEventListener('click', ()=>{
+        lab.bakeOn = !lab.bakeOn;
+        log(`Bake ${lab.bakeOn?'ON':'OFF'}`);
+        toast(`Bake ${lab.bakeOn?'ON':'OFF'}`);
+        syncToggles();
+      });
+      ui.btnOven?.addEventListener('click', ()=>{
+        lab.ovenOn = !lab.ovenOn;
+        log(`Oven ${lab.ovenOn?'ON':'OFF'}`);
+        toast(`Oven ${lab.ovenOn?'ON':'OFF'}`);
+        syncToggles();
+      });
+      ui.btnLoad?.addEventListener('click', ()=>{
+        const n = clamp(num(ui.numQ, 4), 1, 16)|0;
         lab.ionsLoaded = n;
         lab.ions = makeIonChain(n);
         log(`Loaded ion chain: N=${n}`);
+        toast(`Loaded ions: N=${n}`);
       });
-      ui.btnCool.addEventListener('click', ()=>{
+      ui.btnCool?.addEventListener('click', ()=>{
         lab.coolingOn = !lab.coolingOn;
         log(`Cooling ${lab.coolingOn?'ON':'OFF'}`);
+        toast(`Cooling ${lab.coolingOn?'ON':'OFF'}`);
+        syncToggles();
       });
-      ui.btnReset.addEventListener('click', ()=>{
+      ui.btnReset?.addEventListener('click', ()=>{
         Object.assign(lab, {
           pressure: 1e-9,
           ovenTempC: 25,
           ionsLoaded: 0,
           ions: [],
           nbar: 8.0,
+          pumpOn:false,
+          bakeOn:false,
+          ovenOn:false,
+          coolingOn:false,
           readout: { lastBrightCounts:[], lastDarkCounts:[], lastSpam:null },
           cal: { points:[], tableRows:[] },
           cam: { ...lab.cam, lastImage:null, lastCounts:null, centroid:null },
@@ -1954,14 +3010,16 @@
         ui.tblOut.innerHTML = '';
         ui.tblCal.innerHTML = '';
         log('Reset.');
+        toast('Reset.');
+        syncToggles();
       });
 
       // program templates
-      ui.selTemplate.addEventListener('change', ()=>{
+      ui.selTemplate?.addEventListener('change', ()=>{
         ui.txtProgram.value = templates[ui.selTemplate.value] || '';
       });
 
-      ui.btnCompile.addEventListener('click', ()=>{
+      ui.btnCompile?.addEventListener('click', ()=>{
         try{
           const text = ui.txtProgram.value || '';
           const ops = compileProgram(text);
@@ -1969,88 +3027,103 @@
           lab.program.compiled = ops;
           lab.program.lastError = null;
           drawPulseTimeline(ops);
-          setReady(true, 'COMPILED');
           log(`Compiled ${ops.length} ops.`);
+          toast(`Compiled ${ops.length} ops.`);
         }catch(e){
           lab.program.lastError = e;
-          setReady(false, 'ERROR');
           log(`Compile error: ${e.message}`);
+          toast(`Compile error: ${e.message}`);
         }
       });
 
-      ui.btnRun.addEventListener('click', ()=>{
+      ui.btnRun?.addEventListener('click', ()=>{
         try{
-          // compile if needed
           const text = ui.txtProgram.value || '';
           const ops = compileProgram(text);
           lab.program.text = text;
           lab.program.compiled = ops;
           lab.program.lastError = null;
 
-          // run
           runShots(ops);
-          setReady(true, 'RAN');
         }catch(e){
-          setReady(false, 'ERROR');
           log(`Run error: ${e.message}`);
+          toast(`Run error: ${e.message}`);
         }
       });
 
       // lasers
       function syncLocks(){
-        lab.lasers.L369.lock = ui.chkL369.checked;
-        lab.lasers.L399.lock = ui.chkL399.checked;
-        lab.lasers.L935.lock = ui.chkL935.checked;
-        lab.lasers.L355.lock = ui.chkL355.checked;
-        lab.lasers.L638.lock = ui.chkL638.checked;
+        if(ui.chkL369) lab.lasers.L369.lock = ui.chkL369.checked;
+        if(ui.chkL399) lab.lasers.L399.lock = ui.chkL399.checked;
+        if(ui.chkL935) lab.lasers.L935.lock = ui.chkL935.checked;
+        if(ui.chkL355) lab.lasers.L355.lock = ui.chkL355.checked;
+        if(ui.chkL638) lab.lasers.L638.lock = ui.chkL638.checked;
       }
-      [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el.addEventListener('change', ()=>{ syncLocks(); }));
+      [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el?.addEventListener('change', syncLocks));
 
-      ui.btnLockAll.addEventListener('click', ()=>{
-        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el.checked=true);
+      ui.btnLockAll?.addEventListener('click', ()=>{
+        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>{ if(el) el.checked=true; });
         syncLocks();
         log('Lasers: lock all.');
+        toast('Lasers: lock all.');
       });
-      ui.btnUnlockAll.addEventListener('click', ()=>{
-        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el.checked=false);
+      ui.btnUnlockAll?.addEventListener('click', ()=>{
+        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>{ if(el) el.checked=false; });
         syncLocks();
         log('Lasers: unlock all.');
+        toast('Lasers: unlock all.');
       });
-      ui.btnKickLasers.addEventListener('click', ()=>{
+      ui.btnKickLasers?.addEventListener('click', ()=>{
         for(const k of ['L369','L399','L935','L355','L638']){
           lab.lasers[k].err += 0.9*randn();
         }
         log('Lasers: kick.');
+        toast('Lasers: kick.');
       });
 
       // micromotion
       function syncMM(){
-        lab.mm.compX = ui.numCompX.valueAsNumber || 0;
-        lab.mm.compY = ui.numCompY.valueAsNumber || 0;
+        lab.mm.compX = num(ui.numCompX, 0);
+        lab.mm.compY = num(ui.numCompY, 0);
       }
-      ui.numCompX.addEventListener('input', syncMM);
-      ui.numCompY.addEventListener('input', syncMM);
-      ui.btnAutoMM.addEventListener('click', ()=>{
-        // simple gradient-ish step toward 0
+      ui.numCompX?.addEventListener('input', syncMM);
+      ui.numCompY?.addEventListener('input', syncMM);
+      ui.btnAutoMM?.addEventListener('click', ()=>{
         lab.mm.compX *= 0.55;
         lab.mm.compY *= 0.55;
         ui.numCompX.value = lab.mm.compX.toFixed(2);
         ui.numCompY.value = lab.mm.compY.toFixed(2);
         log('Micromotion: auto step toward optimum.');
+        toast('Micromotion: auto step toward optimum.');
       });
 
       // base select
-      ui.selBaseP.addEventListener('change', ()=>{ lab.baseP = parseFloat(ui.selBaseP.value); });
+      ui.selBaseP?.addEventListener('change', ()=>{ lab.baseP = parseFloat(ui.selBaseP.value); });
 
-      // camera overlay init
-      lab.cam.overlay = ui.selCamOverlay.value;
+      // log actions
+      ui.btnClearLog?.addEventListener('click', ()=>{
+        ui.log.textContent = '';
+        toast('Log cleared.');
+      });
+      ui.btnCopyLog?.addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(ui.log.textContent || '');
+          toast('Log copied to clipboard.');
+        }catch{
+          toast('Clipboard unavailable.');
+        }
+      });
 
       // init template text
-      ui.txtProgram.value = templates[ui.selTemplate.value] || templates.ramsey;
+      ui.txtProgram.value = templates[ui.selTemplate?.value] || templates.ramsey;
       syncLocks();
       syncTrap();
       syncMM();
+      syncToggles();
       syncText();
+
+      // ensure nav overlay state is correct on load for current viewport
+      openNav(false);
     }
 
     /********************
@@ -2067,15 +3140,14 @@
       ionsUpdate(dt);
       laserStep(dt);
 
-      // update ready status based on "reasonable" conditions
+      // readiness
       const okVac = lab.pressure < 2.5e-10;
       const okIons = lab.ionsLoaded > 0;
-      if(okVac && okIons) setReady(true, 'READY');
-      else setReady(false, okVac ? 'NO IONS' : 'VAC');
+      if(okVac && okIons) setReady('ok', 'READY');
+      else setReady(okVac ? 'warn' : 'bad', okVac ? 'NO IONS' : 'VAC');
 
       syncText();
 
-      // draw
       drawVacuum();
       drawIons();
       drawPulseTimeline(lab.program.compiled);
@@ -2085,12 +3157,15 @@
       drawLaserDiag();
       drawMM();
       drawCalibration();
+      drawMS();
 
       requestAnimationFrame(tick);
     }
 
     // Resize handler
     window.addEventListener('resize', ()=>{
+      refreshColors();
+      openNav(false);
       [
         ui.cvEnv, ui.cvIons, ui.cvPulse, ui.cvReadout, ui.cvDist, ui.cvCam,
         ui.cvPhoton, ui.cvMS, ui.cvLaser, ui.cvMM, ui.cvCal
@@ -2099,7 +3174,9 @@
 
     // Boot
     bindControls();
+    setupScrollSpy();
     log('Simulator ready.');
+    toast('Simulator ready.');
     requestAnimationFrame(tick);
   </script>
 </body>
