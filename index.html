@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Quantum Ion Lab Simulator (Single‑File)</title>
+  <title>Quantum Ion Lab Simulator (Single-File)</title>
   <style>
     :root{
       --bg:#0b0f14;
@@ -111,9 +111,6 @@
     }
     .iconBtn:hover{ background:rgba(255,255,255,.08); }
     .iconBtn:active{ transform:translateY(1px); }
-
-    /* FIX: nav button is only meaningful on mobile where sidebar becomes off-canvas */
-    #btnNav{ display:none; }
 
     .search{
       display:flex; align-items:center; gap:8px;
@@ -535,6 +532,30 @@
       padding:10px;
     }
 
+    /* ---------- Subtle tooltip (custom, not browser title) ---------- */
+    .tt{
+      position: fixed;
+      top: 0;
+      left: 0;
+      transform: translate(-9999px, -9999px);
+      opacity: 0;
+      pointer-events: none; /* important: never block clicks */
+      transition: opacity .12s ease;
+      z-index: 90;
+
+      max-width: min(360px, calc(100vw - 24px));
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(12,16,24,.92);
+      backdrop-filter: blur(10px);
+      color: rgba(232,240,251,.95);
+      border-radius: 12px;
+      padding: 8px 10px;
+      box-shadow: var(--shadow2);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .tt.show{ opacity: 1; }
+
     /* ---------- Toast ---------- */
     .toast{
       position: fixed;
@@ -573,7 +594,7 @@
       border:none;
       border-radius: 18px;
       padding:0;
-      width: min(680px, calc(100vw - 24px));
+      width: min(720px, calc(100vw - 24px));
       background: rgba(16,22,32,.96);
       color: rgba(232,240,251,.95);
       box-shadow: var(--shadow);
@@ -590,6 +611,8 @@
       color: rgba(167,180,200,.95);
       font-size:12px;
       line-height:1.45;
+      max-height: min(72vh, 720px);
+      overflow:auto;
     }
     .kbd{
       font-family: var(--mono);
@@ -604,6 +627,40 @@
       display:flex; justify-content:flex-end; gap:10px;
     }
 
+    .manual h4{
+      margin: 12px 0 6px;
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .18px;
+      color: rgba(232,240,251,.92);
+      text-transform: uppercase;
+    }
+    .manual p{ margin: 6px 0; }
+    .manual code{
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 1px 5px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: rgba(232,240,251,.94);
+    }
+    .manual pre{
+      margin: 8px 0 10px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
+      overflow:auto;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.35;
+      color: rgba(232,240,251,.92);
+      white-space: pre;
+    }
+    .manual ol, .manual ul{ margin: 6px 0 8px; padding-left: 18px; }
+    .manual li{ margin: 4px 0; }
+
     /* ---------- Focus ---------- */
     :focus-visible{
       outline: 2px solid rgba(123,220,255,.85);
@@ -617,7 +674,6 @@
       .right{ position: static; max-height: none; overflow: visible; }
     }
     @media (max-width: 980px){
-      #btnNav{ display:inline-flex; } /* FIX: show mobile nav button */
       .appbar{ grid-template-columns: auto 1fr auto; }
       .search{ display:none; }
       .layout{ grid-template-columns: 1fr; }
@@ -645,38 +701,27 @@
 <body>
   <div class="appbar" role="banner">
     <div class="left">
-      <button
-        id="btnNav"
-        class="iconBtn"
-        type="button"
-        aria-label="Open navigation"
-        aria-controls="sidebar"
-        aria-expanded="false"
-      >
+      <button id="btnNav" class="iconBtn" type="button" aria-label="Open navigation">
         ☰
       </button>
       <div class="brand">
         <h1>
           Quantum Ion Lab Simulator
-          <span class="tag"><span class="dotMini" aria-hidden="true"></span>single‑file</span>
+          <span class="tag"><span class="dotMini" aria-hidden="true"></span>single-file</span>
         </h1>
         <p class="sub">Vacuum → load → program → shots → readout (with lasers, micromotion, camera)</p>
       </div>
     </div>
 
-    <div class="search" role="search">
-      <input
-        id="txtFilter"
-        type="search"
-        aria-label="Filter panels"
-        placeholder="Filter panels / controls (e.g., “T2”, “laser”, “readout”)…"
-      />
+    <div class="search" aria-label="Filter panels">
+      <input id="txtFilter" type="search" placeholder="Filter panels / controls (e.g., “T2”, “laser”, “readout”)…" />
     </div>
 
     <div class="actions">
-      <button id="btnCompileTop" class="btn primary" type="button" title="Compile (Ctrl+Shift+Enter)">Compile</button>
-      <button id="btnRunTop" class="btn good" type="button" title="Run (Ctrl+Enter)">Run</button>
-      <button id="btnHelp" class="btn ghost" type="button" title="Help (?)">Help</button>
+      <button id="btnCompileTop" class="btn primary" type="button">Compile</button>
+      <button id="btnRunTop" class="btn good" type="button">Run</button>
+      <button id="btnTips" class="btn ghost toggle" type="button" aria-pressed="true">Tooltips</button>
+      <button id="btnHelp" class="btn ghost" type="button">Help</button>
     </div>
 
     <div class="pill" aria-live="polite">
@@ -743,7 +788,7 @@
         <div class="sectionHead">
           <div>
             <h2>Overview</h2>
-            <p class="hint">A guided “lab‑first” workflow: get vacuum → load ions → cool → compile → run → interpret readout.</p>
+            <p class="hint">A guided “lab-first” workflow: get vacuum → load ions → cool → compile → run → interpret readout.</p>
           </div>
           <div class="sectionTools">
             <button id="btnScrollProgram" class="btn ghost" type="button">Go to Program</button>
@@ -804,8 +849,8 @@
                 PI scheme
                 <select id="selPI">
                   <option value="none">None</option>
-                  <option value="ca40" selected>Ca‑40 (example)</option>
-                  <option value="ca44">Ca‑44 (example)</option>
+                  <option value="ca40" selected>Ca-40 (example)</option>
+                  <option value="ca44">Ca-44 (example)</option>
                 </select>
               </label>
             </div>
@@ -844,7 +889,7 @@
 
             <div class="sep"></div>
 
-            <canvas id="cvEnv" class="cv mini" aria-label="Vacuum and oven canvas">Canvas not supported.</canvas>
+            <canvas id="cvEnv" class="cv mini" aria-label="Vacuum and oven canvas"></canvas>
           </div>
         </details>
 
@@ -852,7 +897,7 @@
           <summary>
             <div class="sumLeft">
               <div class="sumTitle">Trap & Fields</div>
-              <div class="sumSub">RF / secular frequencies / B‑field; shows a chain schematic</div>
+              <div class="sumSub">RF / secular frequencies / B-field; shows a chain schematic</div>
             </div>
             <div class="chev">▾</div>
           </summary>
@@ -868,7 +913,7 @@
             </div>
 
             <div class="sep"></div>
-            <canvas id="cvIons" class="cv" aria-label="Ion chain canvas">Canvas not supported.</canvas>
+            <canvas id="cvIons" class="cv" aria-label="Ion chain canvas"></canvas>
           </div>
         </details>
       </section>
@@ -914,7 +959,7 @@
             </label>
 
             <div class="sep"></div>
-            <canvas id="cvPulse" class="cv short" aria-label="Pulse timeline canvas">Canvas not supported.</canvas>
+            <canvas id="cvPulse" class="cv short" aria-label="Pulse timeline canvas"></canvas>
           </div>
         </details>
       </section>
@@ -960,8 +1005,8 @@
                 <span style="color:var(--muted); font-weight:700;">(p1, p2)</span>
               </summary>
               <div class="grid2" style="margin-top:10px;">
-                <label>Two‑qubit p1 (1q proxy)<input id="numP1" type="number" value="0.006" min="0" max="1" step="0.001" /></label>
-                <label>Two‑qubit p2 (corr)<input id="numP2" type="number" value="0.002" min="0" max="1" step="0.001" /></label>
+                <label>Two-qubit p1 (1q proxy)<input id="numP1" type="number" value="0.006" min="0" max="1" step="0.001" /></label>
+                <label>Two-qubit p2 (corr)<input id="numP2" type="number" value="0.002" min="0" max="1" step="0.001" /></label>
               </div>
             </details>
           </div>
@@ -1019,11 +1064,11 @@
             <div class="grid2">
               <div>
                 <div style="font-size:11px; color:rgba(167,180,200,.85); font-weight:900; letter-spacing:.15px; text-transform:uppercase; margin-bottom:6px;">Readout Histogram</div>
-                <canvas id="cvReadout" class="cv short" aria-label="Readout histogram canvas">Canvas not supported.</canvas>
+                <canvas id="cvReadout" class="cv short" aria-label="Readout histogram canvas"></canvas>
               </div>
               <div>
                 <div style="font-size:11px; color:rgba(167,180,200,.85); font-weight:900; letter-spacing:.15px; text-transform:uppercase; margin-bottom:6px;">Outcome Distribution</div>
-                <canvas id="cvDist" class="cv short" aria-label="Outcome distribution canvas">Canvas not supported.</canvas>
+                <canvas id="cvDist" class="cv short" aria-label="Outcome distribution canvas"></canvas>
               </div>
             </div>
 
@@ -1049,7 +1094,7 @@
         <div class="sectionHead">
           <div>
             <h2>Diagnostics</h2>
-            <p class="hint">Lasers, micromotion, camera. These are primarily visualization / UI‑workflow aids.</p>
+            <p class="hint">Lasers, micromotion, camera. These are primarily visualization / UI-workflow aids.</p>
           </div>
         </div>
 
@@ -1067,7 +1112,7 @@
                 <span>369 nm lock</span>
                 <span class="row" style="gap:8px;">
                   <input id="chkL369" type="checkbox" checked />
-                  <span id="spL369" class="spark ok" title="lock status"></span>
+                  <span id="spL369" class="spark ok"></span>
                 </span>
               </label>
 
@@ -1119,7 +1164,7 @@
             </div>
 
             <div class="sep"></div>
-            <canvas id="cvLaser" class="cv short" aria-label="Laser diagnostic canvas">Canvas not supported.</canvas>
+            <canvas id="cvLaser" class="cv short" aria-label="Laser diagnostic canvas"></canvas>
           </div>
         </details>
 
@@ -1144,11 +1189,11 @@
             </div>
 
             <div class="row wrapRow" style="margin-top:10px;">
-              <button id="btnAutoMM" class="btn primary" type="button">Auto‑minimize</button>
+              <button id="btnAutoMM" class="btn primary" type="button">Auto-minimize</button>
             </div>
 
             <div class="sep"></div>
-            <canvas id="cvMM" class="cv short" aria-label="Micromotion diagnostic canvas">Canvas not supported.</canvas>
+            <canvas id="cvMM" class="cv short" aria-label="Micromotion diagnostic canvas"></canvas>
           </div>
         </details>
 
@@ -1190,7 +1235,7 @@
 
             <div class="row wrapRow" style="margin-top:10px;">
               <label style="flex:1; min-width:150px;">
-                ROI half‑width (px)
+                ROI half-width (px)
                 <input id="numCamROI" type="number" value="14" step="1" min="4" />
               </label>
 
@@ -1205,7 +1250,7 @@
             </div>
 
             <div class="sep"></div>
-            <canvas id="cvCam" class="cv" aria-label="Camera canvas">Canvas not supported.</canvas>
+            <canvas id="cvCam" class="cv" aria-label="Camera canvas"></canvas>
           </div>
         </details>
 
@@ -1218,7 +1263,7 @@
             <div class="chev">▾</div>
           </summary>
           <div class="panelBody">
-            <canvas id="cvCal" class="cv short" aria-label="Calibration plot canvas">Canvas not supported.</canvas>
+            <canvas id="cvCal" class="cv short" aria-label="Calibration plot canvas"></canvas>
             <div class="sep"></div>
             <table class="mono">
               <thead>
@@ -1281,7 +1326,7 @@
           <div class="chev">▾</div>
         </summary>
         <div class="panelBody">
-          <canvas id="cvPhoton" class="cv short" aria-label="Photon trace canvas">Canvas not supported.</canvas>
+          <canvas id="cvPhoton" class="cv short" aria-label="Photon trace canvas"></canvas>
         </div>
       </details>
 
@@ -1294,7 +1339,7 @@
           <div class="chev">▾</div>
         </summary>
         <div class="panelBody">
-          <canvas id="cvMS" class="cv short" aria-label="MS diagnostic canvas">Canvas not supported.</canvas>
+          <canvas id="cvMS" class="cv short" aria-label="MS diagnostic canvas"></canvas>
         </div>
       </details>
 
@@ -1307,36 +1352,90 @@
           <div class="chev">▾</div>
         </summary>
         <div class="panelBody">
-          <canvas class="cv short" aria-label="Spare canvas">Canvas not supported.</canvas>
+          <canvas class="cv short" aria-label="Spare canvas"></canvas>
         </div>
       </details>
     </aside>
   </div>
 
+  <div id="tooltip" class="tt" role="tooltip" aria-hidden="true"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <dialog id="dlgHelp" aria-labelledby="dlgHelpTitle">
     <div class="dlgHd">
-      <h3 id="dlgHelpTitle">Help & shortcuts</h3>
+      <h3 id="dlgHelpTitle">Help & user manual</h3>
       <form method="dialog">
-        <button class="btn ghost" value="close" type="submit" aria-label="Close help">Close</button>
+        <button class="btn ghost" value="close" type="submit" aria-label="Close help" data-tip="Close the help / user manual dialog.">Close</button>
       </form>
     </div>
+
     <div class="dlgBd">
-      <div style="margin-bottom:10px; color:rgba(232,240,251,.92); font-weight:850;">Keyboard</div>
-      <ul style="margin:0; padding-left:18px;">
-        <li><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span>: Run</li>
-        <li><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Enter</span>: Compile</li>
-        <li><span class="kbd">?</span>: Toggle this help</li>
-        <li><span class="kbd">Esc</span>: Close nav/help</li>
-      </ul>
-      <div style="height:10px"></div>
-      <div style="margin-bottom:6px; color:rgba(232,240,251,.92); font-weight:850;">Navigation</div>
-      <div>Use the left sidebar to jump between workflow stages. On mobile, open it with <span class="kbd">☰</span>.</div>
+      <div class="manual">
+        <h4>Keyboard shortcuts</h4>
+        <ul>
+          <li><span class="kbd">Ctrl</span>/<span class="kbd">⌘</span> + <span class="kbd">Enter</span>: Run</li>
+          <li><span class="kbd">Ctrl</span>/<span class="kbd">⌘</span> + <span class="kbd">Shift</span> + <span class="kbd">Enter</span>: Compile</li>
+          <li><span class="kbd">?</span>: Toggle this help</li>
+          <li><span class="kbd">Esc</span>: Close nav/help + dismiss tooltips</li>
+        </ul>
+
+        <h4>Quickstart</h4>
+        <ol>
+          <li>Open <b>Setup → Vacuum</b> and toggle <code>Pump</code> (optionally <code>Bake</code>) until pressure is reasonable.</li>
+          <li>Click <code>Load Ions</code> (or use the sidebar <code>Load ions</code>).</li>
+          <li>Toggle <code>Cool</code> to reduce <code>n̄</code> over time.</li>
+          <li>Go to <b>Program</b>, pick a template, then press <code>Compile</code>.</li>
+          <li>Go to <b>Experiment</b>, set qubits/shots, then press <code>Run</code>.</li>
+          <li>Inspect <b>Readout</b>: histogram + top outcomes + SPAM estimate.</li>
+        </ol>
+
+        <h4>Tooltips</h4>
+        <p>
+          Tooltips are intentionally subtle:
+          they appear after a short hover delay and <b>never block clicks</b>.
+          Use the <code>Tooltips</code> button in the top bar to toggle them on/off.
+        </p>
+
+        <h4>Layout guide</h4>
+        <ul>
+          <li><b>Left sidebar</b>: navigation + quick actions + live summary.</li>
+          <li><b>Main column</b>: workflow panels (Setup → Program → Experiment → Diagnostics → Log).</li>
+          <li><b>Right column</b>: always-available live plots/diagnostics.</li>
+          <li><b>Top bar</b>: filter panels, compile/run/help, and readiness state.</li>
+        </ul>
+
+        <h4>Pulse program DSL</h4>
+        <p><b>Format:</b> one operation per line: <code>Op Duration</code>. Duration units: <code>us</code>, <code>µs</code>, <code>ms</code>, <code>s</code>.</p>
+        <pre>Doppler 2ms
+OpticalPump 200us
+Pi/2 10us
+Wait 50us
+Pi/2 10us
+Readout 200us</pre>
+
+        <p><b>Supported ops (toy model):</b> <code>Doppler</code>, <code>OpticalPump</code>, <code>Pi</code>/<code>X</code>/<code>Rabi</code>, <code>Pi/2</code>, <code>MS</code>, <code>Wait</code>, <code>Readout</code>.</p>
+        <p><b>Notes:</b> This simulator treats the program as a compact “recipe” driving simplified noise/readout. It's meant for UX + intuition, not hardware-accurate calibration.</p>
+
+        <h4>Experiment & readout</h4>
+        <ul>
+          <li><b>Qubits</b> sets the ion-chain length used by the run.</li>
+          <li><b>Shots</b> controls Monte-Carlo sampling. Larger gives smoother histograms.</li>
+          <li><b>Sensor</b> selects PMT-style per-ion counts, or Camera mode (synthetic frame in Camera View).</li>
+          <li><b>Classifier</b> turns photon counts into bits (threshold/Naive Bayes/LLR slider).</li>
+        </ul>
+
+        <h4>Troubleshooting</h4>
+        <ul>
+          <li><b>“Bad duration” compile errors</b>: ensure each line is <code>Op 10us</code> / <code>Op 2ms</code>, etc. Units are required.</li>
+          <li><b>No ions / ion loss</b>: lower pressure (Pump/Bake), reduce oven heating, or reload ions.</li>
+          <li><b>High SPAM</b>: adjust readout parameters (Bright/Dark μ, Threshold, detection time), reduce XTalk, increase T2, or lower heat.</li>
+        </ul>
+      </div>
     </div>
+
     <div class="dlgFt">
       <form method="dialog">
-        <button class="btn primary" value="close" type="submit">Got it</button>
+        <button class="btn primary" value="close" type="submit" data-tip="Close the help dialog.">Got it</button>
       </form>
     </div>
   </dialog>
@@ -1347,12 +1446,6 @@
      ********************/
     const $ = (id) => document.getElementById(id);
 
-    // FIX: robust numeric reader that allows 0 and rejects NaN
-    const num = (el, fallback) => {
-      const v = el?.valueAsNumber;
-      return Number.isFinite(v) ? v : fallback;
-    };
-
     const ui = {
       // top controls
       btnNav: $('btnNav'),
@@ -1361,12 +1454,11 @@
       txtFilter: $('txtFilter'),
       btnCompileTop: $('btnCompileTop'),
       btnRunTop: $('btnRunTop'),
+      btnTips: $('btnTips'),
       btnHelp: $('btnHelp'),
       dlgHelp: $('dlgHelp'),
+      tooltip: $('tooltip'),
       toast: $('toast'),
-
-      // sidebar element (for a11y toggling on mobile)
-      sidebar: $('sidebar'),
 
       // quick actions
       qaPump: $('qaPump'),
@@ -1544,6 +1636,323 @@
     }
 
     /********************
+     * Subtle tooltip system (less invasive)
+     * - Shows only for elements with data-tip.
+     * - Hover: delayed.
+     * - Keyboard focus: immediate.
+     * - Touch focus: brief + auto-hide.
+     * - Never blocks clicks (pointer-events:none).
+     ********************/
+    const Tooltip = (() => {
+      const el = ui.tooltip;
+
+      let enabled = true;
+      let active = null;
+      let showTimer = null;
+      let hideTimer = null;
+      let lastInput = 'pointer';
+
+      const HOVER_DELAY_MS = 450;
+      const HIDE_DELAY_MS = 80;
+      const TOUCH_AUTOHIDE_MS = 2400;
+
+      const canHover = window.matchMedia?.('(hover: hover)')?.matches ?? true;
+      const isTouchLike = window.matchMedia?.('(hover: none)')?.matches ?? false;
+
+      function clearTimers(){
+        clearTimeout(showTimer); showTimer = null;
+        clearTimeout(hideTimer); hideTimer = null;
+      }
+
+      function setEnabled(on){
+        enabled = !!on;
+        if(!enabled) dismiss();
+      }
+
+      function placeForTarget(target){
+        if(!target || !el) return;
+        const rect = target.getBoundingClientRect();
+        const margin = 10;
+        const pad = 10;
+
+        // Measure after content is set.
+        const w = el.offsetWidth || 280;
+        const h = el.offsetHeight || 44;
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Prefer below with a slight horizontal offset.
+        let x = rect.left + Math.min(24, rect.width * 0.25);
+        let y = rect.bottom + pad;
+
+        if(x + w > vw - margin) x = vw - w - margin;
+        if(x < margin) x = margin;
+
+        // If clipped at bottom, flip above.
+        if(y + h > vh - margin) y = rect.top - h - pad;
+        if(y < margin) y = margin;
+
+        el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+      }
+
+      function showNow(target, {autohide=false} = {}){
+        if(!enabled || !el) return;
+        const msg = (target?.dataset?.tip || '').trim();
+        if(!msg) return;
+
+        clearTimers();
+        active = target;
+
+        // aria-describedby: preserve any existing value
+        const prev = target.getAttribute('aria-describedby') || '';
+        target.dataset.prevDesc = prev;
+        const toks = new Set(prev.split(/\s+/).filter(Boolean));
+        toks.add('tooltip');
+        target.setAttribute('aria-describedby', [...toks].join(' '));
+
+        el.textContent = msg;
+        el.classList.add('show');
+        el.setAttribute('aria-hidden', 'false');
+
+        requestAnimationFrame(() => placeForTarget(target));
+
+        if(autohide){
+          hideTimer = setTimeout(() => dismiss(), TOUCH_AUTOHIDE_MS);
+        }
+      }
+
+      function scheduleShow(target){
+        if(!enabled || !target?.dataset?.tip) return;
+        clearTimers();
+        showTimer = setTimeout(() => showNow(target), HOVER_DELAY_MS);
+      }
+
+      function scheduleHide(){
+        clearTimers();
+        hideTimer = setTimeout(() => dismiss(), HIDE_DELAY_MS);
+      }
+
+      function dismiss(){
+        clearTimers();
+        if(!el) return;
+        el.classList.remove('show');
+        el.setAttribute('aria-hidden', 'true');
+        el.style.transform = 'translate(-9999px,-9999px)';
+
+        if(active){
+          const prev = active.dataset.prevDesc || '';
+          if(prev) active.setAttribute('aria-describedby', prev);
+          else active.removeAttribute('aria-describedby');
+          delete active.dataset.prevDesc;
+        }
+        active = null;
+      }
+
+      function attach(node){
+        if(!node || node.dataset.tipBound === '1') return;
+        node.dataset.tipBound = '1';
+
+        if(canHover){
+          node.addEventListener('pointerenter', () => scheduleShow(node));
+          node.addEventListener('pointerleave', () => scheduleHide());
+          node.addEventListener('pointerdown', () => { lastInput = 'pointer'; dismiss(); });
+        } else {
+          node.addEventListener('pointerdown', () => { lastInput = 'pointer'; dismiss(); });
+        }
+
+        node.addEventListener('focus', () => {
+          if(!node.dataset.tip) return;
+          const focusViaKeyboard = (lastInput === 'keyboard');
+          if(focusViaKeyboard){
+            showNow(node);
+          } else if(isTouchLike){
+            showNow(node, {autohide:true});
+          }
+        });
+
+        node.addEventListener('blur', () => scheduleHide());
+      }
+
+      function refresh(){
+        document.querySelectorAll('[data-tip]').forEach(attach);
+      }
+
+      // Input modality tracking (capture phase to be early)
+      window.addEventListener('keydown', () => { lastInput = 'keyboard'; }, true);
+      window.addEventListener('pointerdown', () => { lastInput = 'pointer'; }, true);
+
+      window.addEventListener('scroll', () => { if(active) placeForTarget(active); }, {passive:true});
+      window.addEventListener('resize', () => { if(active) placeForTarget(active); }, {passive:true});
+
+      return { refresh, dismiss, setEnabled, get enabled(){ return enabled; } };
+    })();
+
+    function applyTooltips(){
+      const TIP = {
+        // top bar
+        btnNav: 'Open the navigation sidebar (especially useful on mobile).',
+        btnCloseNav: 'Close the navigation sidebar.',
+        navOverlay: 'Click to close the navigation sidebar.',
+        txtFilter: 'Filter panels/controls by keyword (matches titles + panel text).',
+        btnCompileTop: 'Compile the pulse program and update the timeline. Shortcut: Ctrl/⌘ + Shift + Enter.',
+        btnRunTop: 'Compile then run shots with current settings. Shortcut: Ctrl/⌘ + Enter.',
+        btnTips: 'Toggle tooltips on/off (tooltips are delayed and never block clicks).',
+        btnHelp: 'Open the user manual and shortcuts. Shortcut: ?',
+
+        // quick actions
+        qaPump: 'Toggle the vacuum pump.',
+        qaBake: 'Toggle bake-out (reduces outgassing over time in this toy model).',
+        qaOven: 'Toggle the atomic oven (increases loading/outgassing).',
+        qaCool: 'Toggle cooling (reduces n̄ in this toy model).',
+        qaLoad: 'Load an ion chain (uses the current “Qubits” value).',
+        qaReset: 'Reset the simulator state and clear run results.',
+
+        // navigation
+        btnScrollProgram: 'Scroll to the Program section.',
+        btnScrollReadout: 'Scroll to the Readout panel.',
+
+        // setup controls
+        selBaseP: 'Choose the base (ultimate) pressure of the system.',
+        selPI: 'Pick a (toy) photoionization scheme.',
+        rngPump: 'Pump throttle: higher usually lowers pressure faster.',
+        rngOven: 'Oven setpoint: higher increases temperature and outgassing.',
+        btnPump: 'Toggle the vacuum pump on/off.',
+        btnBake: 'Toggle bake-out on/off.',
+        btnOven: 'Toggle oven on/off.',
+        btnLoad: 'Load ions into the trap (toy model).',
+        btnCool: 'Toggle cooling on/off (affects n̄).',
+        btnReset: 'Reset the entire simulator state.',
+
+        // trap
+        numRFf: 'RF drive frequency (MHz). Affects the toy trap heuristic.',
+        numRFv: 'RF amplitude (Vpp). Affects the toy trap heuristic.',
+        numB: 'Magnetic field (mT). Display-only in the toy model.',
+        numWz: 'Axial secular frequency ωz (MHz).',
+        numWr: 'Radial secular frequency ωr (MHz).',
+
+        // program
+        selTemplate: 'Load an example pulse sequence template into the editor.',
+        txtProgram: 'Pulse program editor. One op per line: “Op 10us”. Units: us/µs/ms/s.',
+        btnCompile: 'Compile the program and draw the timeline.',
+        btnRun: 'Compile + run the program to generate shot outcomes and readout histograms.',
+
+        // shots/noise
+        numQ: 'Number of qubits / ions for the experiment (1–16).',
+        numShots: 'Number of shots (Monte-Carlo samples). Higher = smoother stats.',
+        selSensor: 'Choose PMTs (per-ion counts) or Camera (synthetic frame).',
+        numXtalk: 'Readout crosstalk: bright ions can “bleed” into neighbors.',
+        numT2: 'Decoherence time constant (ms) in the toy model.',
+        numHeat: 'Heating rate (quanta per ms) added to n̄ dynamics.',
+        numP1: 'Extra single-qubit bit-flip probability (toy).',
+        numP2: 'Correlated neighbor error probability for MS (toy).',
+
+        // readout
+        numDetT: 'Detection time per shot (µs). Scales expected photon counts.',
+        numBright: 'Expected bright-state photon counts (μ) at 200µs (toy).',
+        numDark: 'Expected dark-state photon counts (μ) at 200µs (toy).',
+        numThresh: 'Threshold classifier cut (counts ≥ threshold ⇒ bright).',
+        selClassifier: 'Counts-to-bit classifier mode.',
+        rngLLR: 'LLR offset: shifts the effective threshold when Classifier=LLR.',
+        numBinUs: 'Bin width (µs) for advanced readout dynamics (toy).',
+        numDepump: 'Depump rate (Hz): bright → dark during detection (toy).',
+        numPump: 'Pump rate (Hz): dark → bright during detection (toy).',
+
+        // diagnostics
+        chkL369: 'Toggle 369 nm lock (toy). Off increases drift/error.',
+        chkL399: 'Toggle 399 nm lock (toy).',
+        chkL935: 'Toggle 935 nm lock (toy).',
+        chkL355: 'Toggle 355 nm lock (toy).',
+        chkL638: 'Toggle 638 nm lock (toy).',
+        btnLockAll: 'Enable all laser locks.',
+        btnUnlockAll: 'Disable all laser locks.',
+        btnKickLasers: 'Apply a disturbance to all laser errors (toy).',
+
+        numCompX: 'Micromotion compensation X (V).',
+        numCompY: 'Micromotion compensation Y (V).',
+        btnAutoMM: 'Auto-step compensation toward the optimum (toy).',
+
+        selCamMode: 'Camera display mode.',
+        rngCamGain: 'Camera gain applied to synthetic counts.',
+        rngCamSigma: 'Blur sigma for the synthetic camera PSF.',
+        numCamScale: 'Pixel scale (µm/px). Display-only in this toy model.',
+        numCamROI: 'ROI half-width for centroid calculation.',
+        selCamOverlay: 'Optional overlay (ROI box or centroid crosshair).',
+
+        // log
+        btnCopyLog: 'Copy the log text to your clipboard.',
+        btnClearLog: 'Clear the log.',
+
+        // canvases
+        cvEnv: 'Vacuum + oven visualization (pressure scale + oven temperature bar).',
+        cvIons: 'Ion chain schematic (brightness depends on n̄).',
+        cvPulse: 'Compiled pulse timeline (relative durations).',
+        cvReadout: 'Histogram of photon counts for bright/dark samples.',
+        cvDist: 'Outcome distribution for the most likely bitstrings.',
+        cvCam: 'Synthetic camera frame (only populated when Sensor=Camera).',
+        cvPhoton: 'Toy photon trace driven by pressure + n̄ (placeholder).',
+        cvMS: 'MS loop closure / detuning heuristic (toy).',
+        cvLaser: 'Laser error bars (toy).',
+        cvMM: 'Micromotion sideband proxy (toy).',
+        cvCal: 'Calibration placeholder plot.'
+      };
+
+      for(const [id, msg] of Object.entries(TIP)){
+        const el = $(id);
+        if(el) el.dataset.tip = msg;
+      }
+
+      // Readiness pill (not an input, but useful)
+      const pill = document.querySelector('.pill');
+      if(pill){
+        pill.dataset.tip =
+          'Overall readiness indicator.\n' +
+          'READY = vacuum OK + ions loaded.\n' +
+          'VAC = pressure too high.\n' +
+          'NO IONS = vacuum OK but no ions loaded.';
+      }
+
+      // Panel summaries: add “expand/collapse” context
+      const panelTips = {
+        panelVacuum: 'Vacuum, oven, and loading controls. Expand/collapse this panel.',
+        panelTrap: 'Trap RF/secular parameters and ion-chain view. Expand/collapse this panel.',
+        panelProgram: 'Pulse program editor + compiler timeline. Expand/collapse this panel.',
+        panelShots: 'Shot count and noise model knobs. Expand/collapse this panel.',
+        panelReadout: 'Readout model, classifier, histogram, and outcome distribution. Expand/collapse this panel.',
+        panelLasers: 'Laser lock toggles and error readback (toy). Expand/collapse this panel.',
+        panelMM: 'Micromotion compensation knobs and proxy metric. Expand/collapse this panel.',
+        panelCam: 'Synthetic camera settings and frame view. Expand/collapse this panel.',
+        panelCal: 'Calibration placeholder. Expand/collapse this panel.',
+        panelLog: 'Console log of actions and run summaries. Expand/collapse this panel.',
+        panelPhoton: 'Right-side toy photon trace. Expand/collapse this panel.',
+        panelMS: 'Right-side MS diagnostic proxy. Expand/collapse this panel.',
+        panelSpare: 'Spare plot area (placeholder). Expand/collapse this panel.'
+      };
+
+      document.querySelectorAll('details.panel').forEach(d => {
+        const sum = d.querySelector(':scope > summary');
+        if(!sum) return;
+        const id = d.id || '';
+        sum.dataset.tip = panelTips[id] || `Expand/collapse panel: ${(d.getAttribute('data-title')||'').trim() || 'Panel'}.`;
+      });
+
+      // Nav links: explain jump
+      (ui.nav?.querySelectorAll('a') || []).forEach(a => {
+        const label = a.textContent.replace(/\s+/g,' ').trim();
+        a.dataset.tip = `Jump to: ${label}`;
+      });
+
+      // Advanced details summaries
+      document.querySelectorAll('#panelShots details > summary, #panelReadout details > summary').forEach(s => {
+        if(!s.dataset.tip){
+          s.dataset.tip = 'Show/hide advanced settings.';
+        }
+      });
+
+      Tooltip.refresh();
+    }
+
+    /********************
      * Canvas helpers
      ********************/
     function ensureCanvas(c){
@@ -1555,7 +1964,6 @@
         c.width = w; c.height = h;
       }
       const ctx = c.getContext('2d');
-      if(!ctx) return null;
       ctx.setTransform(1,0,0,1,0,0);
       return ctx;
     }
@@ -1579,28 +1987,6 @@
       ctx.fillStyle = 'rgba(232,240,251,.88)';
       ctx.font = `900 ${Math.max(12, Math.floor(c.height/16))}px ${getComputedStyle(document.body).fontFamily}`;
       ctx.fillText(title, 10, 22);
-      ctx.restore();
-    }
-
-    // FIX: frame/title overlay for image plots (e.g., camera) so putImageData doesn't wipe the header
-    function frameOverlay(ctx, title){
-      const c = ctx.canvas;
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255,255,255,.10)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(2,2,c.width-4,c.height-4);
-
-      const fontSize = Math.max(12, Math.floor(c.height/16));
-      ctx.font = `900 ${fontSize}px ${getComputedStyle(document.body).fontFamily}`;
-      const padX = 8, padY = 6;
-      const textW = ctx.measureText(title).width;
-      const boxW = Math.min(c.width-12, Math.ceil(textW + padX*2));
-      const boxH = Math.ceil(fontSize + padY*2);
-
-      ctx.fillStyle = 'rgba(0,0,0,.38)';
-      ctx.fillRect(6,6, boxW, boxH);
-      ctx.fillStyle = 'rgba(232,240,251,.90)';
-      ctx.fillText(title, 6+padX, 6+padY+fontSize-2);
       ctx.restore();
     }
 
@@ -1679,7 +2065,7 @@
 
     // Very rough vacuum/oven model
     function pressureUpdate(dt){
-      lab.baseP = parseFloat(ui.selBaseP?.value ?? String(lab.baseP));
+      lab.baseP = parseFloat(ui.selBaseP.value);
 
       const targetBase = lab.baseP;
       const pump = lab.pumpOn ? (0.15 + 0.85*lab.pumpSpeed) : 0.0;
@@ -1707,7 +2093,7 @@
 
     function ionsUpdate(dt){
       const heatBg = 0.004 + 0.03*lab.ovenSet*(lab.ovenOn ? 1:0);
-      const heat = heatBg + num(ui.numHeat, 0.03); // FIX: allow 0
+      const heat = heatBg + (ui.numHeat?.valueAsNumber || 0.03);
       const coolPower = lab.coolingOn ? 1.0 : 0.0;
       const coolRate = 0.30 * coolPower; // quanta/ms
 
@@ -1737,6 +2123,7 @@
      * Program compiler (tiny DSL)
      ********************/
     const templates = {
+      // FIX: use real newlines, not the literal string "\\n"
       ramsey: [
         'Doppler 2ms',
         'OpticalPump 200us',
@@ -1744,26 +2131,25 @@
         'Wait 50us',
         'Pi/2 10us',
         'Readout 200us'
-      ].join('\n'), // FIX: real newline
+      ].join('\n'),
       rabi: [
         'Doppler 2ms',
         'OpticalPump 200us',
         'Rabi 30us',
         'Readout 200us'
-      ].join('\n'), // FIX
+      ].join('\n'),
       ms: [
         'Doppler 2ms',
         'OpticalPump 200us',
         'MS 60us',
         'Readout 250us'
-      ].join('\n'), // FIX
+      ].join('\n'),
       readout: [
         'Readout 250us'
-      ].join('\n'), // FIX
+      ].join('\n'),
     };
 
     function parseDuration(tok){
-      // FIX: remove double-escaped regex pieces
       const m = String(tok).trim().match(/^([0-9]*\.?[0-9]+)\s*(us|µs|ms|s)$/i);
       if(!m) return null;
       const x = parseFloat(m[1]);
@@ -1774,19 +2160,36 @@
       return null;
     }
 
+    function normalizeProgramText(text){
+      let s = String(text ?? '');
+      s = s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      // If the text came in as a single line with literal "\n", convert it.
+      if(!s.includes('\n') && s.includes('\\n')){
+        s = s.replace(/\\n/g, '\n');
+      }
+      return s;
+    }
+
     function compileProgram(text){
-      // FIX: real newline/whitespace regexes
-      const lines = text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      const normalized = normalizeProgramText(text);
+      const rawLines = normalized.split('\n').map(s => s.trim());
+
       const ops = [];
-      for(const ln of lines){
+      for(let i=0;i<rawLines.length;i++){
+        const ln = rawLines[i];
+        if(!ln) continue;
+
+        // allow simple comment lines
+        if(ln.startsWith('#') || ln.startsWith('//') || ln.startsWith(';')) continue;
+
         const parts = ln.split(/\s+/);
-        const op = parts[0].toLowerCase();
+        const op = (parts[0] || '').toLowerCase();
         const dur = parts[1] ? parseDuration(parts[1]) : null;
         if(!op) continue;
 
         const needsDur = !['barrier','idle'].includes(op);
         if(needsDur && (dur === null || !isFinite(dur))){
-          throw new Error(`Bad duration on line: "${ln}"`);
+          throw new Error(`Bad duration on line ${i+1}: "${ln}" (use us/µs/ms/s)`);
         }
         ops.push({ op, dur: needsDur ? dur : 0, raw: ln });
       }
@@ -1814,7 +2217,7 @@
           }
         }
         if(op === 'ms'){
-          const p2 = clamp(num(ui.numP2, 0.002), 0, 1); // FIX: allow 0
+          const p2 = clamp(ui.numP2?.valueAsNumber || 0.002, 0, 1);
           for(let i=0;i<this.n-1;i++){
             if(Math.random() < p2){
               this.state[i] ^= 1;
@@ -1828,12 +2231,12 @@
     window.StabilizerTableau = Stabilizer;
 
     function applyDecoherence(bits, dt){
-      const T2ms = Math.max(0.1, num(ui.numT2, 25));
+      const T2ms = Math.max(0.1, ui.numT2?.valueAsNumber || 25);
       const p = 1 - Math.exp(- (dt*1e3) / T2ms);
       for(let i=0;i<bits.length;i++){
         if(Math.random() < p*0.15){ bits[i] ^= 1; }
       }
-      const p1 = clamp(num(ui.numP1, 0.006), 0, 1); // FIX: allow 0
+      const p1 = clamp(ui.numP1?.valueAsNumber || 0.006, 0, 1);
       for(let i=0;i<bits.length;i++){
         if(Math.random() < p1){ bits[i] ^= 1; }
       }
@@ -1843,10 +2246,10 @@
      * Readout model
      ********************/
     function sampleCounts(bit, detT_us){
-      const brightMu = num(ui.numBright, 26);
-      const darkMu   = num(ui.numDark, 3);
-      const depumpHz = num(ui.numDepump, 700);
-      const pumpHz   = num(ui.numPump, 250);
+      const brightMu = ui.numBright?.valueAsNumber || 26;
+      const darkMu   = ui.numDark?.valueAsNumber || 3;
+      const depumpHz = ui.numDepump?.valueAsNumber || 700;
+      const pumpHz   = ui.numPump?.valueAsNumber || 250;
 
       const t = detT_us / 200;
       let muB = brightMu * t;
@@ -1867,10 +2270,10 @@
     }
 
     function classifyCount(k){
-      const thr = num(ui.numThresh, 12); // FIX: allow 0
+      const thr = ui.numThresh?.valueAsNumber || 12;
       const mode = (ui.selClassifier?.value || 'threshold').toLowerCase();
       if(mode === 'llr'){
-        const llr = num(ui.rngLLR, 0);
+        const llr = ui.rngLLR?.valueAsNumber || 0;
         return (k >= (thr + llr)) ? 1 : 0;
       }
       if(mode === 'naivebayes'){
@@ -1896,9 +2299,9 @@
      * Run shots
      ********************/
     function runShots(ops){
-      const n = clamp(num(ui.numQ, 4), 1, 16) | 0;
-      const shots = clamp(num(ui.numShots, 2000), 1, 50000) | 0;
-      const xtalk = clamp(num(ui.numXtalk, 0.05), 0, 1); // FIX: allow 0
+      const n = clamp(ui.numQ?.valueAsNumber || 4, 1, 16) | 0;
+      const shots = clamp(ui.numShots?.valueAsNumber || 2000, 1, 50000) | 0;
+      const xtalk = clamp(ui.numXtalk?.valueAsNumber || 0.05, 0, 1);
 
       // Ensure ion chain exists (UX: auto-load to match run settings)
       if(lab.ionsLoaded !== n){
@@ -1927,7 +2330,7 @@
         }
       }
 
-      const detT_us = num(ui.numDetT, 200);
+      const detT_us = ui.numDetT?.valueAsNumber || 200;
       const sensor = (ui.selSensor?.value || 'pmts').toLowerCase();
 
       const outcomeCounts = new Map();
@@ -2189,16 +2592,6 @@
       }
 
       const total = ops.reduce((s,o)=>s+o.dur,0);
-
-      // FIX: avoid division by zero / NaNs
-      if(!(total > 0)){
-        ctx.fillStyle = 'rgba(255,255,255,.55)';
-        ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
-        ctx.fillText('Program duration is 0 (only idle/barrier ops?).', 12, 50);
-        ctx.restore();
-        return;
-      }
-
       const x0 = 20, x1 = c.width-20;
       const y0 = 55, h = c.height-70;
       let t = 0;
@@ -2258,10 +2651,10 @@
         ui.txtSpam.textContent = '—';
       }
 
-      const detT = num(ui.numDetT, 200);
-      const muB = num(ui.numBright, 26) * (detT/200);
-      const muD = num(ui.numDark, 3) * (detT/200);
-      const thr = num(ui.numThresh, 12);
+      const detT = ui.numDetT?.valueAsNumber || 200;
+      const muB = (ui.numBright?.valueAsNumber || 26) * (detT/200);
+      const muD = (ui.numDark?.valueAsNumber || 3) * (detT/200);
+      const thr = ui.numThresh?.valueAsNumber || 12;
       ui.txtCountsPhysical.innerHTML = `Pois(μ<sub>b</sub>≈${muB.toFixed(1)}), Pois(μ<sub>d</sub>≈${muD.toFixed(1)}), thr=${thr}`;
 
       if(!brightCounts?.length && !darkCounts?.length){
@@ -2376,18 +2769,20 @@
       if(!ctx) return;
 
       clear(ctx);
+      axes(ctx, 'Camera');
+
+      const c = ctx.canvas;
+      ctx.save();
 
       const img = lab.cam.lastImage;
       if(!img){
-        axes(ctx, 'Camera');
         ctx.fillStyle = 'rgba(255,255,255,.55)';
         ctx.font = `14px ${getComputedStyle(document.body).fontFamily}`;
         ctx.fillText('Run with Sensor=Camera to render a frame.', 12, 52);
+        ctx.restore();
         return;
       }
 
-      // FIX: draw image FIRST, then overlay title/frame so putImageData doesn't erase it
-      const c = ctx.canvas;
       const w = c.width, h = c.height;
 
       let vmax = 0;
@@ -2409,7 +2804,7 @@
       const roiHalf = Math.max(4, lab.cam.roiHalf|0);
 
       if(lab.cam.overlay === 'roi'){
-        ctx.strokeStyle = 'rgba(255,255,255,.70)';
+        ctx.strokeStyle = 'rgba(255,255,255,.55)';
         ctx.lineWidth = 2;
         ctx.strokeRect(cx-roiHalf, cy-roiHalf, 2*roiHalf, 2*roiHalf);
       }
@@ -2425,7 +2820,7 @@
         ctx.stroke();
       }
 
-      frameOverlay(ctx, 'Camera');
+      ctx.restore();
     }
 
     function drawLaserDiag(){
@@ -2754,7 +3149,7 @@
     function syncText(){
       ui.txtPump.textContent = String(Math.round(lab.pumpSpeed*100));
       ui.txtOvenSet.textContent = String(Math.round(lab.ovenSet*100));
-      ui.txtLLR.textContent = (num(ui.rngLLR, 0)).toFixed(1);
+      ui.txtLLR.textContent = (ui.rngLLR?.valueAsNumber || 0).toFixed(1);
       ui.txtCamGain.textContent = (lab.cam.gain).toFixed(1);
       ui.txtCamSigma.textContent = (lab.cam.sigma).toFixed(1);
 
@@ -2794,8 +3189,7 @@
 
       function upd(k, txt, sp){
         const L = lab.lasers[k];
-        if(txt) txt.textContent = `${L.err.toFixed(3)}`;
-        if(!sp) return;
+        txt.textContent = `${L.err.toFixed(3)}`;
         const a = Math.abs(L.err);
         const ok = L.lock && a < 0.35;
         const warn = L.lock && a >= 0.35 && a < 0.8;
@@ -2812,28 +3206,7 @@
     }
 
     function openNav(open){
-      const mobile = window.matchMedia('(max-width: 980px)').matches;
-
-      // On desktop the sidebar is always visible; force-close any mobile overlay state
-      if(!mobile){
-        document.body.classList.remove('navOpen');
-        ui.btnNav?.setAttribute('aria-expanded', 'false');
-        ui.navOverlay?.setAttribute('aria-hidden', 'true');
-        ui.sidebar?.removeAttribute('aria-hidden');
-        return;
-      }
-
-      const isOpen = !!open;
-      document.body.classList.toggle('navOpen', isOpen);
-      ui.btnNav?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      ui.navOverlay?.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-      ui.sidebar?.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-
-      if(isOpen){
-        (ui.nav?.querySelector('a') || ui.btnCloseNav)?.focus?.();
-      }else{
-        ui.btnNav?.focus?.();
-      }
+      document.body.classList.toggle('navOpen', !!open);
     }
 
     function highlightNavActive(id){
@@ -2845,9 +3218,9 @@
 
     function setupScrollSpy(){
       const sections = document.querySelectorAll('section[data-section]');
-      if(!sections.length || !('IntersectionObserver' in window)) return;
-
+      if(!sections.length) return;
       const obs = new IntersectionObserver((entries) => {
+        // pick the most visible entry
         const best = entries
           .filter(e => e.isIntersecting)
           .sort((a,b) => (b.intersectionRatio - a.intersectionRatio))[0];
@@ -2861,19 +3234,34 @@
     }
 
     function bindControls(){
-      // navigation / overlays
-      ui.btnNav?.addEventListener('click', () => openNav(!document.body.classList.contains('navOpen')));
-      ui.btnCloseNav?.addEventListener('click', () => openNav(false));
-      ui.navOverlay?.addEventListener('click', () => openNav(false));
-
-      // close nav on link click (mobile UX)
-      ui.nav?.addEventListener('click', (e) => {
-        const a = e.target.closest?.('a');
-        if(a) openNav(false);
+      // tooltips toggle preference
+      let tipsOn = true;
+      try{
+        const v = localStorage.getItem('qils_tooltips');
+        if(v === '0') tipsOn = false;
+      }catch{}
+      Tooltip.setEnabled(tipsOn);
+      ui.btnTips?.setAttribute('aria-pressed', tipsOn ? 'true' : 'false');
+      ui.btnTips?.addEventListener('click', ()=>{
+        const current = ui.btnTips.getAttribute('aria-pressed') === 'true';
+        const next = !current;
+        ui.btnTips.setAttribute('aria-pressed', next ? 'true' : 'false');
+        Tooltip.setEnabled(next);
+        try{ localStorage.setItem('qils_tooltips', next ? '1' : '0'); }catch{}
+        log(`Tooltips ${next ? 'ON' : 'OFF'}.`);
+        toast(`Tooltips ${next ? 'ON' : 'OFF'}.`);
       });
 
+      // assign tips once (after tooltip enabled state is known)
+      applyTooltips();
+
+      // navigation / overlays
+      ui.btnNav?.addEventListener('click', () => openNav(true));
+      ui.btnCloseNav?.addEventListener('click', () => openNav(false));
+      ui.navOverlay?.addEventListener('click', () => openNav(false));
       document.addEventListener('keydown', (e) => {
         if(e.key === 'Escape'){
+          Tooltip.dismiss();
           openNav(false);
           if(ui.dlgHelp?.open) ui.dlgHelp.close();
         }
@@ -2935,29 +3323,29 @@
       ui.qaReset?.addEventListener('click', () => ui.btnReset?.click());
 
       // sliders
-      ui.rngPump?.addEventListener('input', () => { lab.pumpSpeed = num(ui.rngPump, 65)/100; syncText(); });
-      ui.rngOven?.addEventListener('input', () => { lab.ovenSet = num(ui.rngOven, 40)/100; syncText(); });
+      ui.rngPump?.addEventListener('input', () => { lab.pumpSpeed = ui.rngPump.valueAsNumber/100; syncText(); });
+      ui.rngOven?.addEventListener('input', () => { lab.ovenSet = ui.rngOven.valueAsNumber/100; syncText(); });
 
       // trap numbers
       function syncTrap(){
-        lab.rf.fMHz = num(ui.numRFf, lab.rf.fMHz);
-        lab.rf.vpp = num(ui.numRFv, lab.rf.vpp);
-        lab.trap.wzMHz = num(ui.numWz, lab.trap.wzMHz);
-        lab.trap.wrMHz = num(ui.numWr, lab.trap.wrMHz);
-        lab.trap.BmT = num(ui.numB, lab.trap.BmT);
+        lab.rf.fMHz = ui.numRFf?.valueAsNumber || lab.rf.fMHz;
+        lab.rf.vpp = ui.numRFv?.valueAsNumber || lab.rf.vpp;
+        lab.trap.wzMHz = ui.numWz?.valueAsNumber || lab.trap.wzMHz;
+        lab.trap.wrMHz = ui.numWr?.valueAsNumber || lab.trap.wrMHz;
+        lab.trap.BmT = ui.numB?.valueAsNumber || lab.trap.BmT;
         syncText();
       }
       [ui.numRFf, ui.numRFv, ui.numWz, ui.numWr, ui.numB].forEach(el => el?.addEventListener('input', syncTrap));
 
       // readout
-      ui.rngLLR?.addEventListener('input', ()=>{ ui.txtLLR.textContent = (num(ui.rngLLR, 0)).toFixed(1); });
+      ui.rngLLR?.addEventListener('input', ()=>{ ui.txtLLR.textContent = (ui.rngLLR.valueAsNumber||0).toFixed(1); });
 
       // camera
       ui.selCamMode?.addEventListener('change', ()=>{ lab.cam.mode = ui.selCamMode.value; });
-      ui.rngCamGain?.addEventListener('input', ()=>{ lab.cam.gain = num(ui.rngCamGain, 1.0); ui.txtCamGain.textContent = lab.cam.gain.toFixed(1); });
-      ui.rngCamSigma?.addEventListener('input', ()=>{ lab.cam.sigma = num(ui.rngCamSigma, 1.0); ui.txtCamSigma.textContent = lab.cam.sigma.toFixed(1); });
-      ui.numCamScale?.addEventListener('input', ()=>{ lab.cam.scaleUmPerPx = num(ui.numCamScale, 1.2); });
-      ui.numCamROI?.addEventListener('input', ()=>{ lab.cam.roiHalf = num(ui.numCamROI, 14); });
+      ui.rngCamGain?.addEventListener('input', ()=>{ lab.cam.gain = ui.rngCamGain.valueAsNumber; ui.txtCamGain.textContent = lab.cam.gain.toFixed(1); });
+      ui.rngCamSigma?.addEventListener('input', ()=>{ lab.cam.sigma = ui.rngCamSigma.valueAsNumber; ui.txtCamSigma.textContent = lab.cam.sigma.toFixed(1); });
+      ui.numCamScale?.addEventListener('input', ()=>{ lab.cam.scaleUmPerPx = ui.numCamScale.valueAsNumber || 1.2; });
+      ui.numCamROI?.addEventListener('input', ()=>{ lab.cam.roiHalf = ui.numCamROI.valueAsNumber || 14; });
       ui.selCamOverlay?.addEventListener('change', ()=>{ lab.cam.overlay = ui.selCamOverlay.value; });
 
       // vacuum buttons
@@ -2980,7 +3368,7 @@
         syncToggles();
       });
       ui.btnLoad?.addEventListener('click', ()=>{
-        const n = clamp(num(ui.numQ, 4), 1, 16)|0;
+        const n = clamp(ui.numQ?.valueAsNumber || 4, 1, 16)|0;
         lab.ionsLoaded = n;
         lab.ions = makeIonChain(n);
         log(`Loaded ion chain: N=${n}`);
@@ -3027,10 +3415,12 @@
           lab.program.compiled = ops;
           lab.program.lastError = null;
           drawPulseTimeline(ops);
+          setReady('ok', 'COMPILED');
           log(`Compiled ${ops.length} ops.`);
           toast(`Compiled ${ops.length} ops.`);
         }catch(e){
           lab.program.lastError = e;
+          setReady('bad', 'ERROR');
           log(`Compile error: ${e.message}`);
           toast(`Compile error: ${e.message}`);
         }
@@ -3045,7 +3435,9 @@
           lab.program.lastError = null;
 
           runShots(ops);
+          setReady('ok', 'RAN');
         }catch(e){
+          setReady('bad', 'ERROR');
           log(`Run error: ${e.message}`);
           toast(`Run error: ${e.message}`);
         }
@@ -3053,22 +3445,22 @@
 
       // lasers
       function syncLocks(){
-        if(ui.chkL369) lab.lasers.L369.lock = ui.chkL369.checked;
-        if(ui.chkL399) lab.lasers.L399.lock = ui.chkL399.checked;
-        if(ui.chkL935) lab.lasers.L935.lock = ui.chkL935.checked;
-        if(ui.chkL355) lab.lasers.L355.lock = ui.chkL355.checked;
-        if(ui.chkL638) lab.lasers.L638.lock = ui.chkL638.checked;
+        lab.lasers.L369.lock = ui.chkL369.checked;
+        lab.lasers.L399.lock = ui.chkL399.checked;
+        lab.lasers.L935.lock = ui.chkL935.checked;
+        lab.lasers.L355.lock = ui.chkL355.checked;
+        lab.lasers.L638.lock = ui.chkL638.checked;
       }
       [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el?.addEventListener('change', syncLocks));
 
       ui.btnLockAll?.addEventListener('click', ()=>{
-        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>{ if(el) el.checked=true; });
+        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el.checked=true);
         syncLocks();
         log('Lasers: lock all.');
         toast('Lasers: lock all.');
       });
       ui.btnUnlockAll?.addEventListener('click', ()=>{
-        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>{ if(el) el.checked=false; });
+        [ui.chkL369,ui.chkL399,ui.chkL935,ui.chkL355,ui.chkL638].forEach(el=>el.checked=false);
         syncLocks();
         log('Lasers: unlock all.');
         toast('Lasers: unlock all.');
@@ -3083,8 +3475,8 @@
 
       // micromotion
       function syncMM(){
-        lab.mm.compX = num(ui.numCompX, 0);
-        lab.mm.compY = num(ui.numCompY, 0);
+        lab.mm.compX = ui.numCompX?.valueAsNumber || 0;
+        lab.mm.compY = ui.numCompY?.valueAsNumber || 0;
       }
       ui.numCompX?.addEventListener('input', syncMM);
       ui.numCompY?.addEventListener('input', syncMM);
@@ -3115,15 +3507,12 @@
       });
 
       // init template text
-      ui.txtProgram.value = templates[ui.selTemplate?.value] || templates.ramsey;
+      ui.txtProgram.value = templates[ui.selTemplate.value] || templates.ramsey;
       syncLocks();
       syncTrap();
       syncMM();
       syncToggles();
       syncText();
-
-      // ensure nav overlay state is correct on load for current viewport
-      openNav(false);
     }
 
     /********************
@@ -3165,7 +3554,6 @@
     // Resize handler
     window.addEventListener('resize', ()=>{
       refreshColors();
-      openNav(false);
       [
         ui.cvEnv, ui.cvIons, ui.cvPulse, ui.cvReadout, ui.cvDist, ui.cvCam,
         ui.cvPhoton, ui.cvMS, ui.cvLaser, ui.cvMM, ui.cvCal
