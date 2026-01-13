@@ -80,10 +80,9 @@ This simulator's DSL includes **Pi/2** (think “Hadamard-like”) and **MS** (t
 In **Program → Pulse Program**, paste/edit this exact program (one line per op):
 
 ```
-Doppler 2ms
 OpticalPump 200us
-Pi/2 10us
-MS 60us
+MS q0 q1 pi/2 60us
+Rz q0 pi/2 0us
 Readout 200us
 ```
 
@@ -157,11 +156,10 @@ A classic entanglement check is to measure correlations in more than one basis (
 Modify your program to:
 
 ```
-Doppler 2ms
 OpticalPump 200us
-Pi/2 10us
-MS 60us
-Pi/2 10us
+Rz q0 pi/2 0us
+MS q0 q1 pi/2 60us
+Rz q0 pi/2 0us
 Readout 200us
 ```
 

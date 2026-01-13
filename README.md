@@ -1,284 +1,252 @@
-# Quantum Ion Lab Simulator — Educational Runbook
+# Quantum Ion Lab Simulator Runbook
 
-This simulator is a **lab-workflow teaching tool**: you “prepare the hardware” (vacuum + loading + cooling), “write a pulse sequence,” then run many **shots** and interpret **fluorescence-style readout** and diagnostics. It uses **simplified, toy models** to make cause/effect intuitive (it is not a hardware-accurate predictor).
+This runbook is a practical “how to use it” guide with just enough context to help you understand what each step is doing.
 
-## 1) Mental model of what you're simulating
+## 1) What this simulator is
 
-In real trapped-ion systems, ions are confined by electric fields (RF + DC), cooled and prepared with lasers, and measured by **state-dependent fluorescence** (one state scatters photons strongly while another scatters weakly, and a photon counter distinguishes them).
+* A **browser-only, single HTML file** that mimics a trapped-ion lab workflow: **vacuum → load ions → cool → run pulse program → photon-count readout → bitstrings**.
+* It aims to be **educational**: you can explore how preparation, gates, decoherence, heating, crosstalk, and readout classification change observed outcomes.
+* The UI is organized as a workflow:
 
-In addition, real experiments work hard to reduce **excess micromotion** (driven motion caused by stray electric fields); compensation is typically done by applying voltage patterns on compensation electrodes to cancel those stray fields.
+  * **Setup** (vacuum / loading / cooling / trap parameters)
+  * **Program** (pulse DSL, compile, timeline)
+  * **Experiment** (shots + noise knobs + readout classifier)
+  * **Diagnostics** (lasers, micromotion, camera)
+  * **Log** (action history)
 
-The simulator's “MS” operation is inspired by the **Mølmer–Sørensen family of entangling gates**, which couple qubits through a shared motional mode (and are therefore sensitive to motional effects such as heating).
-
----
-
-## 2) Quick start in ~3 minutes
-
-### A. Get into a “good lab state” (Setup)
-
-1. Go to **Setup → Vacuum, Oven, Loading**.
-2. Click **Pump** (turn it ON).
-3. Watch **Pressure** until it's low enough that the status bar trends **READY/NO IONS** instead of **VAC**.
-4. Click **Load Ions** (loads an ion chain equal to your “Qubits” setting).
-5. Click **Cool** (turn it ON) to reduce motional energy (**n̄**).
-
-What to look for:
-
-* **Pressure** decreasing → fewer loss events.
-* **Ions** > 0 and pressure acceptable → the app status tends toward **READY**.
-
-### B. Compile a pulse program (Program)
-
-1. Go to **Program**.
-2. Pick **Template: Ramsey** (or any template).
-3. Click **Compile** (or press **Ctrl+Shift+Enter**).
-4. Confirm the **Pulse Timeline** plot updates.
-
-### C. Run shots (Experiment)
-
-1. Go to **Experiment → Shot & Noise Model**.
-2. Set **Qubits** and **Shots** (start with 4 qubits, 2000 shots).
-3. Click **Run** (or press **Ctrl+Enter**).
-4. Check:
-
-   * **Readout Histogram**
-   * **Outcome Distribution**
-   * **SPAM estimate** (simple “bit error proxy” for this simulator)
+**Physics context (optional):** In real trapped-ion systems, preparation uses laser cooling + optical pumping, and measurement is typically **state-dependent fluorescence** (electron-shelving style photon counting). 
+**Simulation context (optional):** Efficient simulation of many Clifford-style circuits often uses stabilizer/tableau methods (Gottesman–Knill style), rather than full statevectors.
 
 ---
 
-## 3) Interface map (what each area is for)
+## 2) Launch and basic controls
 
-### Top bar
+### Open and run
 
-* **Compile / Run**: fastest way to build and execute.
-* **Filter**: type “laser”, “readout”, “T2”, etc. to quickly hide panels you don't need.
-* **Status pill**:
+1. Save the simulator as `quant-ion-lab.html`
+2. Open it in a modern browser (Chrome/Firefox/Edge/Safari).
+3. If “Copy log” doesn’t work, that’s usually browser clipboard permissions for local files.
 
-  * **READY**: vacuum OK and ions loaded
-  * **NO IONS**: vacuum OK but nothing loaded
-  * **VAC**: vacuum too poor for stable trapping (in the simulator)
+### Top-bar essentials
 
-### Left sidebar (Navigation + Quick actions)
+* **Compile**: parses the pulse program and draws the timeline.
+* **Run**: compiles then executes shots with current noise/readout settings.
+* **Tooltips**: toggles the subtle hover hints.
+* **Help**: built-in manual + shortcuts.
+* **Filter**: type to quickly find panels/controls.
 
-* **Jump to** workflow sections.
-* **Quick actions** mirror key buttons (Pump/Oven/Bake/Cool/Load/Reset).
-* **Live summary** shows pressure, ion count, and approximate trap numbers.
+### Keyboard shortcuts
 
-### Main column (workflow)
-
-* **Setup** → hardware prep
-* **Program** → pulse DSL + compile
-* **Experiment** → shots/noise/readout + plots
-* **Diagnostics** → lasers / micromotion / camera
-* **Log** → what you did + run summaries
-
-### Right column (Live plots)
-
-* Live visualization panels for “at-a-glance” monitoring.
+* **Ctrl/⌘ + Enter** → Run
+* **Ctrl/⌘ + Shift + Enter** → Compile
+* **?** → Help
+* **Esc** → Close help/nav, dismiss tooltip
 
 ---
 
-## 4) The workflow you should teach
+## 3) Standard operating procedure (cold start → data)
 
-### Step 1 — Vacuum discipline (Setup)
+### Step A — Reset
 
-Controls:
+* Click **Reset** (top or sidebar).
+* Confirm the status pill returns to **INIT/READY/VAC/NO IONS** as it updates.
 
-* **Base pressure**: chooses the best-case floor your chamber can reach.
-* **Pump speed**: stronger pumping → pressure approaches base faster (toy behavior).
-* **Oven set / Oven toggle**: increases loading conditions but often worsens pressure (toy outgassing).
-* **Bake**: in real life, bake-out helps long-term vacuum health; in this simulator it mainly behaves like a “thermal outgassing” knob (expect a pressure rise while it's on).
+### Step B — Pump down (vacuum)
 
-Teaching points:
+In **Setup → Vacuum, Oven, Loading**:
 
-* Higher pressure → more collisions → more ion loss events (simulated).
-* Loading is easier when the “source” is on (oven), but it's a tradeoff.
+1. Set **Base pressure** (lower is better).
+2. Set **Pump speed** (higher pumps faster in the toy model).
+3. Toggle **Pump** ON.
+4. Optional: toggle **Bake** ON briefly to improve pressure trend.
 
-### Step 2 — Load ions, then cool (Setup)
+**Goal:** get pressure into the “OK-ish” or “UHV region” so you don’t lose ions.
 
-* **Load Ions** creates a chain with N ions (based on “Qubits”).
-* **Cool** reduces **n̄** over time (the toy “motional energy” variable).
+### Step C — Set qubit count and load ions
 
-Teaching points:
+In **Experiment → Shot & Noise Model**:
 
-* Cooling is the bridge between “we trapped something” and “we can do coherent control.”
+* Set **Qubits = N** (this is the ion-chain length used for runs).
 
-### Step 3 — Write/compile a pulse program (Program)
+Back in **Setup**:
 
-The pulse DSL is **one operation per line**:
+* Click **Load Ions** and verify the **Ion Chain canvas** shows **N ions**.
 
-**Format**
+### Step D — Cool the motion
 
+* Toggle **Cool** ON.
+* Watch **n̄** fall (lower is better). In real experiments, Doppler cooling reduces motional energy and improves gate performance. 
+
+### Step E — Program, compile, run
+
+1. Go to **Program → Pulse Program**
+2. Choose a **Template** or paste your sequence
+3. Click **Compile** (timeline should update)
+4. Go to **Experiment**, set **Shots**, noise, readout parameters
+5. Click **Run**
+6. Inspect:
+
+   * **Readout Histogram** (bright vs dark separation)
+   * **Outcome Distribution** (bitstring probabilities)
+   * **SPAM estimate** (a rough measurement-error proxy)
+
+---
+
+## 4) Pulse Program DSL
+
+### Syntax rules
+
+* **One instruction per line**:
+  `Op Duration`
+* **Duration units**: `us`, `µs`, `ms`, `s`
+* Blank lines allowed.
+* Comment lines supported if they start with `#`, `//`, or `;`.
+
+### Supported ops (conceptual meaning)
+
+* `Doppler` — cooling/prep step (brings motion down; sets the stage).
+* `OpticalPump` — prepares a clean internal state (like “reset”).
+* `Pi/2` — a Hadamard-like single-qubit rotation (basis change / superposition).
+* `Pi` / `X` / `Rabi` — a single-qubit flip/drive (simplified).
+* `MS` — entangling interaction (common trapped-ion entangler). 
+* `Wait` — idle time where decoherence/heating matter.
+* `Readout` — fluorescence-style measurement (photon counts → bits). 
+
+### Example programs
+
+**1) Ramsey (coherence / calibration)**
+
+```text
+Doppler 2ms
+OpticalPump 200us
+Pi/2 10us
+Wait 50us
+Pi/2 10us
+Readout 200us
 ```
-Operation Duration
+
+**2) Bell-style “superposition + entangle”**
+
+```text
+Doppler 2ms
+OpticalPump 200us
+Pi/2 10us
+MS 60us
+Readout 200us
 ```
 
-**Duration units** (must include a unit):
+**3) “Second basis” measurement (add a basis rotation before readout)**
 
-* `us` or `µs`
-* `ms`
-* `s`
+```text
+Doppler 2ms
+OpticalPump 200us
+Pi/2 10us
+MS 60us
+Pi/2 10us
+Readout 200us
+```
 
-**Common ops you'll see in templates**
+---
 
-* `Doppler 2ms`
-* `OpticalPump 200us`
-* `Pi/2 10us`
-* `Wait 50us`
-* `MS 60us`
-* `Readout 200us`
+## 5) Experiment knobs: what to touch first
 
-**Common compile mistake**
+### Shots & noise model
 
-* If your whole program accidentally becomes a single line containing the literal text `\n`, compilation will fail because the parser expects real line breaks. Make sure each op is on its own line (press Enter in the text area), and every duration includes units.
+* **Qubits**: number of ions/qubits.
+* **Shots**: number of repetitions (Monte Carlo sampling).
+* **XTalk (0–1)**: readout crosstalk; bright ions can bleed into neighbors.
+* **T2 (ms)**: coherence time; lower → more dephasing-like effects.
+* **Heat (q/ms)**: motional heating rate; higher can degrade gates.
+* **p1 / p2** (advanced): extra stochastic error knobs (single-qubit / correlated).
 
-Teaching points:
+**Practical defaults for “clean-ish” behavior**
 
-* “Compile” is a sanity check + timeline visualization step. It's an opportunity to discuss sequencing and timing.
+* Start with: **XTalk 0.00–0.05**, **T2 25 ms**, **Heat 0.00–0.03**.
 
-### Step 4 — Configure experiment statistics + noise (Experiment)
+### Readout model
 
-Key controls:
-
-* **Qubits**: number of ions used as qubits (1–16).
-* **Shots**: repetitions; larger shots → smoother histograms and distributions.
-* **Sensor**:
-
-  * **PMTs**: simple counts model
-  * **Camera**: additionally generates a synthetic camera frame after a run
-* **XTalk**: neighbor contamination (toy crosstalk).
-* **T2**: coherence time knob; lower T2 → worse outcomes over waits.
-* **Heat**: increases **n̄** over time (toy heating).
-* Advanced:
-
-  * **p1 / p2**: extra error knobs (single-qubit-like and correlated-like proxies)
-
-Teaching points:
-
-* Separate **statistical uncertainty** (shots) from **systematic error** (noise knobs).
-
-### Step 5 — Understand readout (Experiment → Readout)
-
-The simulator models fluorescence-style measurement:
-
-* Each ion produces a photon count.
-* Two “count clouds” appear: **dark** vs **bright**.
-* A classifier converts counts into bit values.
-
-This mirrors the key real-world idea: measurement in trapped ions often relies on **state-dependent fluorescence** with photon-counting detectors.
-
-Controls:
-
-* **Detection time**: longer generally separates bright/dark better (but can have tradeoffs).
-* **Bright μ / Dark μ**: average counts for each state (toy model).
-* **Threshold**: simplest classifier.
+* **Det. time (µs)**: longer → more photons (better separation, slower).
+* **Bright μ / Dark μ**: expected photon counts for bright/dark.
+* **Threshold**: counts ≥ threshold → “bright (1)”.
 * **Classifier**:
 
-  * Threshold: deterministic cutoff
-  * Naive Bayes: soft/probabilistic decision
-  * LLR: shifts decision boundary with a slider
-* Advanced dynamics:
+  * *Threshold*: simplest and usually easiest to reason about
+  * *Naive Bayes / LLR*: more flexible if distributions overlap
 
-  * **Bin / Pump / Depump**: toy dynamics that mix bright/dark behavior over time
+**How to “tune readout” quickly**
 
-Outputs:
+1. Run a simple `Readout`-heavy program (or any program).
+2. Look at the **histogram**:
 
-* **SPAM estimate**: simplified error proxy for “state preparation and measurement” effects in the simulator.
-* **Histogram**: shows overlap; overlap means misclassification risk.
-* **Outcome distribution**: top measured bitstrings and their frequencies.
+   * If bright/dark peaks overlap → increase det. time or improve μ separation.
+   * If threshold is cutting through the wrong place → adjust threshold.
 
----
-
-## 5) Diagnostics panels (how to use them in lessons)
-
-### Laser Rack
-
-What it teaches:
-
-* “Locks” and “errors” are a **control-system** story: a locked laser has smaller drift; unlocked tends to wander.
-  How to demo:
-* Turn one lock off → watch error grow → discuss why laser stability matters for gates and readout.
-
-### Micromotion
-
-What it teaches:
-
-* Excess micromotion comes from imperfect fields; compensation reduces it.
-  How to demo:
-* Change **Comp X/Y** → see MM amplitude / sideband proxy change.
-* Use **Auto-minimize** → watch it step toward a better point.
-
-### Camera View
-
-How to demo:
-
-* Set **Sensor = Camera**, run shots, then view the synthetic frame.
-* Toggle overlays (ROI / centroid) to discuss imaging-based readout concepts.
+(Real trapped-ion readout is commonly modeled as photon counting from state-dependent fluorescence; thresholding is a standard baseline classifier. )
 
 ---
 
-## 6) Troubleshooting checklist (student-friendly)
+## 6) How to interpret outputs
 
-### “VAC” / ions keep getting lost
+### Pulse Timeline (after Compile)
 
-* Turn **Pump ON**, increase pump speed.
-* Reduce **Oven** (it can raise pressure in this toy model).
-* Load ions again after pressure improves.
+* Confirms the program parsed correctly.
+* Lets you sanity-check **relative durations** (e.g., a 2 ms Doppler pulse dwarfs a 10 µs gate).
 
-### Compile error: “Bad duration…”
+### Readout Histogram
 
-* Ensure **each operation is on its own line** (real line breaks, not `\n` text).
-* Ensure the duration has a unit: `200us`, `2ms`, `0.2ms`, etc.
-* Example of a valid minimal program:
+* Shows distributions of photon counts for “bright-like” vs “dark-like.”
+* The vertical threshold line is your **bit decision boundary**.
 
-  ```
-  Readout 200us
-  ```
+### Outcome Distribution + Top outcomes table
 
-### SPAM is high / histogram overlaps a lot
+* Shows the most frequent bitstrings and their probabilities.
+* For an ideal Bell-type correlation test in the Z basis, you’d expect **mostly `00` and `11`** (or another correlated pair depending on phases/basis).
 
-* Increase **Detection time**.
-* Adjust **Threshold** (move it between dark/bright peaks).
-* Reduce **XTalk**, increase **T2**, reduce **Heat**.
+### SPAM estimate
 
-### Camera view is blank
-
-* Set **Sensor = Camera**, then **Run** again (camera frame updates on runs).
+* A rough proxy for **State Prep And Measurement** error.
+* Use it as a knob-check: if SPAM gets worse as you increase XTalk or lower det. time, that’s expected.
 
 ---
 
-## 7) Suggested 15–30 minute classroom activities
+## 7) Troubleshooting checklist
 
-1. **Vacuum vs stability**
+### Compile errors (most common)
 
-   * Compare high vs low pressure settings.
-   * Observe ion loss frequency and discuss collisions.
+* **“Bad duration on line …”**
 
-2. **Thresholding lab**
+  * Ensure *every op that needs a duration has one*, with a unit: `10us`, `0.2ms`, `200µs`, etc.
+  * Make sure each op is on its **own line** (don’t paste literal `\n` sequences).
 
-   * Keep everything fixed; vary **Threshold** and **Detection time**.
-   * Goal: minimize SPAM by separating distributions.
+### Status shows VAC / NO IONS
 
-3. **Decoherence intuition**
+* **VAC**: pressure too high → turn **Pump** on, reduce oven, consider **Bake**.
+* **NO IONS**: set **Qubits** then click **Load Ions**.
 
-   * In the program, increase `Wait` duration.
-   * Lower **T2** and compare outcomes; discuss why “waiting” is an operation.
+### “Results look wrong”
 
-4. **Entangling-gate discussion**
+Work through these in order:
 
-   * Use the **MS Gate** template.
-   * Discuss that MS-family gates couple through motion (and why heating can matter).
+1. **Qubits mismatch**: confirm Experiment Qubits equals the loaded chain length.
+2. **Readout threshold wrong**: histogram overlap or poorly placed threshold can make one bitstring dominate.
+3. **XTalk too high**: can turn neighbors bright and bias strings.
+4. **T2 too low / Heat too high / p1/p2 too high**: can destroy expected correlations.
 
 ---
 
-## 8) Mini-glossary (for the handout margin)
+## 8) Recommended learning workflow (for students)
 
-* **RF trap / Paul trap**: electric-field confinement method for ions (RF + DC).
-* **Optical pumping**: laser-based preparation into a known internal state.
-* **Laser cooling**: reduces ion motion to enable coherent control.
-* **n̄ (n-bar)**: mean motional quanta (toy “how hot is the motion”).
-* **T2**: coherence time scale (toy knob controlling decoherence).
-* **State-dependent fluorescence**: measurement method where one state scatters many photons and another scatters few.
-* **Micromotion**: driven RF motion; “excess” micromotion arises from stray fields and is compensated.
-* **MS gate**: a common trapped-ion entangling-gate family mediated by shared motion.
+1. **Readout sanity check**: run `Readout 200us` with different thresholds until histogram separation makes sense.
+2. **Ramsey**: vary `Wait` and see how outcomes change vs T2.
+3. **Bell recipe**: run the Bell program, then add a final `Pi/2` before readout and compare distributions.
+4. **Error study**: change **two knobs** (e.g., XTalk and T2) and record how top outcomes + SPAM shift.
+
+---
+
+## 9) Glossary (quick)
+
+* **n̄ (n-bar)**: average motional excitation; lower is “colder.” 
+* **T2**: coherence time (dephasing-like).
+* **SPAM**: state preparation and measurement error proxy.
+* **MS gate**: Mølmer–Sørensen entangling interaction used in trapped ions. 
+* **State-dependent fluorescence**: readout via photon counts that differ between internal states. 

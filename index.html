@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Quantum Ion Lab Simulator (Single-File)</title>
+  <title>Quantum Ion Lab Simulator</title>
   <style>
     :root{
       --bg:#0b0f14;
@@ -931,7 +931,7 @@
           <summary>
             <div class="sumLeft">
               <div class="sumTitle">Pulse Program</div>
-              <div class="sumSub">Tiny DSL: <span class="mono">Doppler</span>, <span class="mono">OpticalPump</span>, <span class="mono">Pi/2</span>, <span class="mono">MS</span>, <span class="mono">Readout</span></div>
+              <div class="sumSub">Tiny DSL: <span class="mono">Doppler</span>, <span class="mono">OpticalPump</span>, <span class="mono">Pi/2</span>, <span class="mono">MS</span>, <span class="mono">Readout</span> (plus H/S/CNOT/CZ/Z…)</div>
             </div>
             <div class="chev">▾</div>
           </summary>
@@ -941,7 +941,8 @@
                 Template
                 <select id="selTemplate">
                   <option value="ramsey" selected>Ramsey</option>
-                  <option value="ms">MS Gate</option>
+                  <option value="bell">Bell (Pi/2 + MS)</option>
+                  <option value="ms">MS Gate (entangler)</option>
                   <option value="rabi">Rabi</option>
                   <option value="readout">Readout Only</option>
                 </select>
@@ -1209,6 +1210,7 @@
             <div class="row wrapRow">
               <label style="flex:1; min-width:150px;">
                 Mode
+                <select id="selHelpCamMode" style="display:none;"></select>
                 <select id="selCamMode">
                   <option value="counts" selected>Counts</option>
                   <option value="image">Image</option>
@@ -1396,39 +1398,59 @@
           Use the <code>Tooltips</code> button in the top bar to toggle them on/off.
         </p>
 
-        <h4>Layout guide</h4>
-        <ul>
-          <li><b>Left sidebar</b>: navigation + quick actions + live summary.</li>
-          <li><b>Main column</b>: workflow panels (Setup → Program → Experiment → Diagnostics → Log).</li>
-          <li><b>Right column</b>: always-available live plots/diagnostics.</li>
-          <li><b>Top bar</b>: filter panels, compile/run/help, and readiness state.</li>
-        </ul>
-
         <h4>Pulse program DSL</h4>
-        <p><b>Format:</b> one operation per line: <code>Op Duration</code>. Duration units: <code>us</code>, <code>µs</code>, <code>ms</code>, <code>s</code>.</p>
-        <pre>Doppler 2ms
+        <p>
+          <b>Format:</b> one operation per line:
+          <code>Op [targets...] Duration</code>.
+          Targets are optional (<code>q0</code>, <code>q1</code>, … or just <code>0</code>, <code>1</code>, …).
+          Duration units: <code>us</code>, <code>µs</code>, <code>ms</code>, <code>s</code>.
+        </p>
+
+        <pre># Ramsey on qubit 0
+Doppler 2ms
 OpticalPump 200us
-Pi/2 10us
+Pi/2 q0 10us
 Wait 50us
-Pi/2 10us
+Pi/2 q0 10us
+Readout 200us
+
+# Two-ion Bell state (|Φ+⟩) using Pi/2 + MS
+Doppler 2ms
+OpticalPump 200us
+Pi/2 q0 10us
+MS q0 q1 60us
 Readout 200us</pre>
 
-        <p><b>Supported ops (toy model):</b> <code>Doppler</code>, <code>OpticalPump</code>, <code>Pi</code>/<code>X</code>/<code>Rabi</code>, <code>Pi/2</code>, <code>MS</code>, <code>Wait</code>, <code>Readout</code>.</p>
-        <p><b>Notes:</b> This simulator treats the program as a compact “recipe” driving simplified noise/readout. It's meant for UX + intuition, not hardware-accurate calibration.</p>
+        <p>
+          <b>Defaults (if you omit targets):</b>
+          1‑qubit gates default to <code>q0</code>.
+          2‑qubit gates default to <code>q0 q1</code>.
+        </p>
 
-        <h4>Experiment & readout</h4>
+        <p><b>Supported ops:</b></p>
         <ul>
-          <li><b>Qubits</b> sets the ion-chain length used by the run.</li>
-          <li><b>Shots</b> controls Monte-Carlo sampling. Larger gives smoother histograms.</li>
-          <li><b>Sensor</b> selects PMT-style per-ion counts, or Camera mode (synthetic frame in Camera View).</li>
-          <li><b>Classifier</b> turns photon counts into bits (threshold/Naive Bayes/LLR slider).</li>
+          <li><code>Doppler</code>, <code>OpticalPump</code>, <code>Wait</code>, <code>Readout</code></li>
+          <li><code>Pi</code>/<code>X</code>/<code>Rabi</code> (modeled as X)</li>
+          <li><code>Pi/2</code> (modeled as H / “Hadamard-like”)</li>
+          <li><code>H</code>, <code>S</code>, <code>Sdg</code>, <code>Z</code></li>
+          <li><code>MS</code> (modeled as a CNOT-like entangler for circuit-level work)</li>
+          <li><code>CNOT</code>, <code>CZ</code></li>
         </ul>
+
+        <h4>What “physics” is actually simulated</h4>
+        <p>
+          Circuit evolution uses a <b>stabilizer tableau (Clifford) simulator</b> (efficient; not a statevector).
+          Noise is applied stochastically per shot as Pauli channels: time‑based <code>T2</code> dephasing plus <code>p1/p2</code>
+          depolarization (with extra penalties from heating/n̄/micromotion/laser error heuristics).
+          Readout uses the photon-count model and your classifier settings.
+        </p>
 
         <h4>Troubleshooting</h4>
         <ul>
-          <li><b>“Bad duration” compile errors</b>: ensure each line is <code>Op 10us</code> / <code>Op 2ms</code>, etc. Units are required.</li>
-          <li><b>No ions / ion loss</b>: lower pressure (Pump/Bake), reduce oven heating, or reload ions.</li>
-          <li><b>High SPAM</b>: adjust readout parameters (Bright/Dark μ, Threshold, detection time), reduce XTalk, increase T2, or lower heat.</li>
+          <li><b>“Bad duration” errors</b>: the last token must be a duration like <code>10us</code> or <code>2ms</code>.</li>
+          <li><b>You pasted escaped newlines</b>: the editor fixes literal <code>\n</code>, but if you see one giant line, paste with real line breaks.</li>
+          <li><b>Bell state looks wrong</b>: use the Bell template or ensure you have <code>Pi/2 q0</code> then <code>MS q0 q1</code>. If you see mostly <code>10</code>, it usually means the entangler isn’t being applied to the intended pair.</li>
+          <li><b>High SPAM</b>: adjust readout settings (Bright/Dark μ, Threshold, detection time), reduce XTalk, increase T2, lower heat.</li>
         </ul>
       </div>
     </div>
@@ -1637,11 +1659,6 @@ Readout 200us</pre>
 
     /********************
      * Subtle tooltip system (less invasive)
-     * - Shows only for elements with data-tip.
-     * - Hover: delayed.
-     * - Keyboard focus: immediate.
-     * - Touch focus: brief + auto-hide.
-     * - Never blocks clicks (pointer-events:none).
      ********************/
     const Tooltip = (() => {
       const el = ui.tooltip;
@@ -1833,7 +1850,7 @@ Readout 200us</pre>
 
         // program
         selTemplate: 'Load an example pulse sequence template into the editor.',
-        txtProgram: 'Pulse program editor. One op per line: “Op 10us”. Units: us/µs/ms/s.',
+        txtProgram: 'Pulse program editor. One op per line: “Op [q0 q1 ...] 10us”. Duration must be last token. Units: us/µs/ms/s.',
         btnCompile: 'Compile the program and draw the timeline.',
         btnRun: 'Compile + run the program to generate shot outcomes and readout histograms.',
 
@@ -1842,10 +1859,10 @@ Readout 200us</pre>
         numShots: 'Number of shots (Monte-Carlo samples). Higher = smoother stats.',
         selSensor: 'Choose PMTs (per-ion counts) or Camera (synthetic frame).',
         numXtalk: 'Readout crosstalk: bright ions can “bleed” into neighbors.',
-        numT2: 'Decoherence time constant (ms) in the toy model.',
-        numHeat: 'Heating rate (quanta per ms) added to n̄ dynamics.',
-        numP1: 'Extra single-qubit bit-flip probability (toy).',
-        numP2: 'Correlated neighbor error probability for MS (toy).',
+        numT2: 'Decoherence time constant T2 (ms) used for time-based dephasing.',
+        numHeat: 'Heating rate (quanta per ms) added to n̄ dynamics and gate infidelity heuristics.',
+        numP1: 'Single-qubit depolarizing probability applied after 1-qubit gates (toy).',
+        numP2: 'Two-qubit depolarizing probability applied after entangling gates (toy).',
 
         // readout
         numDetT: 'Detection time per shot (µs). Scales expected photon counts.',
@@ -1996,7 +2013,7 @@ Readout 200us</pre>
     }
 
     /********************
-     * Simple physics / state
+     * Simple lab / environment state (toy)
      ********************/
     const lab = {
       t: 0,
@@ -2121,28 +2138,37 @@ Readout 200us</pre>
 
     /********************
      * Program compiler (tiny DSL)
+     * - Supports: Op [targets...] Duration
+     * - Duration must be last token.
+     * - Targets optional: q0 q1 ... or 0 1 ...
      ********************/
     const templates = {
-      // FIX: use real newlines, not the literal string "\\n"
       ramsey: [
         'Doppler 2ms',
         'OpticalPump 200us',
-        'Pi/2 10us',
+        'Pi/2 q0 10us',
         'Wait 50us',
-        'Pi/2 10us',
+        'Pi/2 q0 10us',
         'Readout 200us'
       ].join('\n'),
-      rabi: [
+      bell: [
         'Doppler 2ms',
         'OpticalPump 200us',
-        'Rabi 30us',
+        'Pi/2 q0 10us',
+        'MS q0 q1 60us',
         'Readout 200us'
       ].join('\n'),
       ms: [
         'Doppler 2ms',
         'OpticalPump 200us',
-        'MS 60us',
+        'MS q0 q1 60us',
         'Readout 250us'
+      ].join('\n'),
+      rabi: [
+        'Doppler 2ms',
+        'OpticalPump 200us',
+        'Rabi q0 30us',
+        'Readout 200us'
       ].join('\n'),
       readout: [
         'Readout 250us'
@@ -2170,6 +2196,29 @@ Readout 200us</pre>
       return s;
     }
 
+    function parseTargets(argTokens){
+      const targets = [];
+      let all = false;
+      for(const tok0 of (argTokens || [])){
+        const tok = String(tok0).trim();
+        if(!tok) continue;
+        const parts = tok.split(',').map(s=>s.trim()).filter(Boolean);
+        for(const p of parts){
+          if(p === '*' || p.toLowerCase() === 'all'){
+            all = true;
+            continue;
+          }
+          const m = p.match(/^q?(\d+)$/i);
+          if(m){
+            targets.push(parseInt(m[1], 10));
+            continue;
+          }
+          // ignore unknown tokens silently (keeps DSL forgiving), but you could also throw here
+        }
+      }
+      return { all, targets };
+    }
+
     function compileProgram(text){
       const normalized = normalizeProgramText(text);
       const rawLines = normalized.split('\n').map(s => s.trim());
@@ -2182,64 +2231,307 @@ Readout 200us</pre>
         // allow simple comment lines
         if(ln.startsWith('#') || ln.startsWith('//') || ln.startsWith(';')) continue;
 
-        const parts = ln.split(/\s+/);
+        const parts = ln.split(/\s+/).filter(Boolean);
         const op = (parts[0] || '').toLowerCase();
-        const dur = parts[1] ? parseDuration(parts[1]) : null;
         if(!op) continue;
 
         const needsDur = !['barrier','idle'].includes(op);
-        if(needsDur && (dur === null || !isFinite(dur))){
-          throw new Error(`Bad duration on line ${i+1}: "${ln}" (use us/µs/ms/s)`);
+        let dur = 0;
+        let argTokens = parts.slice(1);
+
+        if(needsDur){
+          if(parts.length < 2){
+            throw new Error(`Missing duration on line ${i+1}: "${ln}" (use us/µs/ms/s)`);
+          }
+          const maybeDur = parseDuration(parts[parts.length-1]);
+          if(maybeDur == null || !isFinite(maybeDur)){
+            throw new Error(`Bad duration on line ${i+1}: "${ln}" (duration must be last token; use us/µs/ms/s)`);
+          }
+          dur = maybeDur;
+          argTokens = parts.slice(1, -1);
         }
-        ops.push({ op, dur: needsDur ? dur : 0, raw: ln });
+
+        const args = parseTargets(argTokens);
+        ops.push({ op, dur, raw: ln, args });
       }
       return ops;
     }
 
     /********************
-     * Minimal stabilizer / measurement model (toy)
+     * Proper stabilizer-tableau simulator (Clifford circuits)
+     * - This fixes the root bug: entanglement/correlation now comes from real Clifford evolution.
+     * - Based on Aaronson–Gottesman stabilizer tableau algorithms.
      ********************/
-    class Stabilizer {
+    function popcount32(x){
+      x = x - ((x >>> 1) & 0x55555555);
+      x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
+      return (((x + (x >>> 4)) & 0x0F0F0F0F) * 0x01010101) >>> 24;
+    }
+    function parity32(x){ return popcount32(x) & 1; }
+
+    // g(x1,z1,x2,z2) table (AG 2004)
+    const G = [
+      [0,0,0,0],
+      [0,0,3,1],
+      [0,1,0,3],
+      [0,3,1,0],
+    ];
+
+    class TableauSim {
       constructor(n){
+        if(n < 1 || n > 31) throw new Error('TableauSim supports 1..31 qubits (UI clamps to 16).');
         this.n = n;
-        this.state = new Array(n).fill(0);
+        const rows = 2*n + 1; // + scratch
+        this.x = new Uint32Array(rows);
+        this.z = new Uint32Array(rows);
+        this.r = new Uint8Array(rows);
+        this.resetAll();
       }
-      reset(){ this.state.fill(0); }
-      apply(op){
-        if(op === 'pi' || op === 'x'){
-          const i = Math.floor(Math.random()*this.n);
-          this.state[i] ^= 1;
+
+      clone(){
+        const t = new TableauSim(this.n);
+        t.x.set(this.x);
+        t.z.set(this.z);
+        t.r.set(this.r);
+        return t;
+      }
+
+      resetAll(){
+        const n = this.n;
+        // Destabilizers: X_i
+        for(let i=0;i<n;i++){
+          this.x[i] = (1 << i);
+          this.z[i] = 0;
+          this.r[i] = 0;
         }
-        if(op === 'pi/2' || op === 'h'){
-          const p = 0.35;
-          for(let i=0;i<this.n;i++){
-            if(Math.random() < p) this.state[i] ^= 1;
+        // Stabilizers: Z_i
+        for(let i=0;i<n;i++){
+          this.x[n+i] = 0;
+          this.z[n+i] = (1 << i);
+          this.r[n+i] = 0;
+        }
+        // Scratch
+        this.x[2*n] = 0;
+        this.z[2*n] = 0;
+        this.r[2*n] = 0;
+      }
+
+      // Row sum: row[h] *= row[i]
+      rowsum(h, i){
+        let phase = (2*this.r[h] + 2*this.r[i]) & 3;
+        let xh = this.x[h], zh = this.z[h];
+        const xi = this.x[i], zi = this.z[i];
+
+        let m = (xh | zh | xi | zi) >>> 0;
+        while(m){
+          const q = m & -m;
+          m ^= q;
+
+          const x1 = (xh & q) ? 1 : 0;
+          const z1 = (zh & q) ? 1 : 0;
+          const x2 = (xi & q) ? 1 : 0;
+          const z2 = (zi & q) ? 1 : 0;
+
+          const a = (x1 << 1) | z1; // 0..3
+          const b = (x2 << 1) | z2; // 0..3
+          phase = (phase + G[a][b]) & 3;
+        }
+
+        this.r[h] = (phase === 2) ? 1 : 0;
+        this.x[h] = xh ^ xi;
+        this.z[h] = zh ^ zi;
+      }
+
+      h(q){
+        const m = (1 << q) >>> 0;
+        for(let i=0;i<2*this.n;i++){
+          const xq = (this.x[i] & m) ? 1 : 0;
+          const zq = (this.z[i] & m) ? 1 : 0;
+          if(xq && zq) this.r[i] ^= 1; // Y -> -Y
+          if(xq !== zq){
+            this.x[i] ^= m;
+            this.z[i] ^= m;
           }
         }
-        if(op === 'ms'){
-          const p2 = clamp(ui.numP2?.valueAsNumber || 0.002, 0, 1);
-          for(let i=0;i<this.n-1;i++){
-            if(Math.random() < p2){
-              this.state[i] ^= 1;
-              this.state[i+1] ^= 1;
+      }
+
+      s(q){
+        const m = (1 << q) >>> 0;
+        for(let i=0;i<2*this.n;i++){
+          const xq = (this.x[i] & m) ? 1 : 0;
+          const zq = (this.z[i] & m) ? 1 : 0;
+          if(xq && zq) this.r[i] ^= 1;
+          if(xq) this.z[i] ^= m;
+        }
+      }
+
+      sdg(q){
+        // S^\dagger = S^3
+        this.s(q); this.s(q); this.s(q);
+      }
+
+      cnot(c, t){
+        if(c === t) return;
+        const cm = (1 << c) >>> 0;
+        const tm = (1 << t) >>> 0;
+        for(let i=0;i<2*this.n;i++){
+          const x = this.x[i], z = this.z[i];
+          const xc = (x & cm) ? 1 : 0;
+          const zc = (z & cm) ? 1 : 0;
+          const xt = (x & tm) ? 1 : 0;
+          const zt = (z & tm) ? 1 : 0;
+
+          if(xc && zt && ((xt ^ zc ^ 1) === 1)) this.r[i] ^= 1;
+          if(xc) this.x[i] ^= tm;
+          if(zt) this.z[i] ^= cm;
+        }
+      }
+
+      cz(a, b){
+        // CZ = H(b) CNOT(a,b) H(b)
+        this.h(b);
+        this.cnot(a, b);
+        this.h(b);
+      }
+
+      applyPauli(xMask, zMask){
+        // Left-multiply by Pauli operator on current state.
+        for(let i=0;i<2*this.n;i++){
+          const anticomm = parity32((this.x[i] & zMask) ^ (this.z[i] & xMask));
+          if(anticomm) this.r[i] ^= 1;
+        }
+      }
+
+      xGate(q){ this.applyPauli((1<<q)>>>0, 0); }
+      zGate(q){ this.applyPauli(0, (1<<q)>>>0); }
+      yGate(q){ this.applyPauli((1<<q)>>>0, (1<<q)>>>0); }
+
+      measureZ(q){
+        const n = this.n;
+        const m = (1 << q) >>> 0;
+
+        // Find stabilizer row with X on measured qubit
+        let p = -1;
+        for(let i=n; i<2*n; i++){
+          if(this.x[i] & m){ p = i; break; }
+        }
+
+        if(p !== -1){
+          // random outcome
+          const outcome = (Math.random() < 0.5) ? 0 : 1;
+
+          // eliminate other Xs in column q
+          for(let i=0;i<2*n;i++){
+            if(i !== p && (this.x[i] & m)){
+              this.rowsum(i, p);
             }
           }
+
+          // copy p to destabilizer partner
+          const dp = p - n;
+          this.x[dp] = this.x[p];
+          this.z[dp] = this.z[p];
+          this.r[dp] = this.r[p];
+
+          // set p to Z generator with phase = outcome
+          this.x[p] = 0;
+          this.z[p] = m;
+          this.r[p] = outcome ? 1 : 0;
+
+          return outcome;
+        }
+
+        // deterministic outcome: compute from destabilizers
+        const scratch = 2*n;
+        this.x[scratch] = 0;
+        this.z[scratch] = 0;
+        this.r[scratch] = 0;
+
+        for(let i=0;i<n;i++){
+          if(this.x[i] & m){
+            this.rowsum(scratch, n+i);
+          }
+        }
+        const out = this.r[scratch] ? 1 : 0;
+        this.x[scratch] = 0;
+        this.z[scratch] = 0;
+        this.r[scratch] = 0;
+        return out;
+      }
+    }
+
+    // Expose for debugging
+    window.StabilizerTableau = TableauSim;
+
+    /********************
+     * Noise helpers (Pauli channels)
+     ********************/
+    function maybeApply1QDepol(sim, q, p){
+      if(p <= 0) return;
+      if(Math.random() >= p) return;
+      const r = Math.random();
+      if(r < 1/3) sim.xGate(q);
+      else if(r < 2/3) sim.yGate(q);
+      else sim.zGate(q);
+    }
+
+    function maybeApply2QDepol(sim, a, b, p){
+      if(p <= 0) return;
+      if(Math.random() >= p) return;
+      // sample from 15 non-identity Paulis on {a,b}
+      const paulis = [0,1,2,3]; // 0=I,1=X,2=Z,3=Y
+      let p1 = 0, p2 = 0;
+      do{
+        p1 = paulis[(Math.random()*4)|0];
+        p2 = paulis[(Math.random()*4)|0];
+      }while(p1===0 && p2===0);
+
+      const applyOne = (q, t) => {
+        if(t===1) sim.xGate(q);
+        else if(t===2) sim.zGate(q);
+        else if(t===3) sim.yGate(q);
+      };
+      applyOne(a, p1);
+      applyOne(b, p2);
+    }
+
+    function applyDephasing(sim, durS, T2ms, n){
+      if(durS <= 0) return;
+      const T2s = Math.max(1e-6, T2ms*1e-3);
+      const pZ = 0.5 * (1 - Math.exp(-durS / T2s)); // Pauli-twirled dephasing
+      for(let q=0;q<n;q++){
+        if(Math.random() < pZ){
+          sim.zGate(q);
         }
       }
-      measureAll(){ return this.state.slice(); }
     }
-    window.StabilizerTableau = Stabilizer;
 
-    function applyDecoherence(bits, dt){
-      const T2ms = Math.max(0.1, ui.numT2?.valueAsNumber || 25);
-      const p = 1 - Math.exp(- (dt*1e3) / T2ms);
-      for(let i=0;i<bits.length;i++){
-        if(Math.random() < p*0.15){ bits[i] ^= 1; }
-      }
-      const p1 = clamp(ui.numP1?.valueAsNumber || 0.006, 0, 1);
-      for(let i=0;i<bits.length;i++){
-        if(Math.random() < p1){ bits[i] ^= 1; }
-      }
+    function effectiveGateErrorParams(totalProgTimeS){
+      const baseP1 = clamp(ui.numP1?.valueAsNumber || 0.006, 0, 1);
+      const baseP2 = clamp(ui.numP2?.valueAsNumber || 0.002, 0, 1);
+
+      const heat = Math.max(0, ui.numHeat?.valueAsNumber || 0.03); // q/ms
+      const totalMs = totalProgTimeS * 1e3;
+
+      // crude “during-run” nbar estimate: current n̄ plus half the heating over the program
+      const nbarRun = Math.max(0.02, lab.nbar + 0.5*heat*totalMs);
+
+      // micromotion penalty (0..~0.6)
+      const mm = clamp(lab.mm.ratio || 0, 0, 1);
+
+      // laser penalty: MS is most sensitive to 355 in this toy model
+      const L355 = lab.lasers?.L355;
+      const laserBad = (L355 && (!L355.lock || Math.abs(L355.err) > 0.5)) ? 1 : 0;
+      const laserMag = clamp(Math.abs(L355?.err || 0), 0, 2);
+
+      // motional penalty from n̄
+      const mot = clamp(0.0015 * nbarRun, 0, 0.06);
+
+      // final effective errors
+      const p1 = clamp(baseP1 * (1 + 0.15*laserMag), 0, 1);
+      const p2 = clamp(baseP2 * (1 + 0.9*mm) + mot + 0.004*laserBad, 0, 1);
+
+      return { p1, p2, nbarRun };
     }
 
     /********************
@@ -2296,7 +2588,39 @@ Readout 200us</pre>
     }
 
     /********************
-     * Run shots
+     * Target resolution (defaults preserve old “minimal line” programs)
+     ********************/
+    function resolve1QTargets(opObj, n){
+      const a = opObj?.args;
+      if(a?.all) return [...Array(n)].map((_,i)=>i);
+      const t = (a?.targets || []).filter(Number.isFinite);
+      if(t.length) return t.map(q => clamp(q,0,n-1)|0);
+      return [0]; // default
+    }
+
+    function resolve2QPairs(opObj, n){
+      const a = opObj?.args;
+      const t = (a?.targets || []).filter(Number.isFinite).map(q=>clamp(q,0,n-1)|0);
+
+      // "all" => apply to adjacent pairs
+      if(a?.all){
+        const pairs = [];
+        for(let i=0;i<n-1;i++) pairs.push([i,i+1]);
+        return pairs.length ? pairs : [[0,0]];
+      }
+
+      if(t.length >= 2) return [[t[0], t[1]]];
+      if(t.length === 1){
+        const c = t[0];
+        const d = (c+1 < n) ? (c+1) : c;
+        return [[c, d]];
+      }
+      if(n >= 2) return [[0,1]];
+      return [[0,0]];
+    }
+
+    /********************
+     * Run shots (real stabilizer simulation + per-shot noise + readout)
      ********************/
     function runShots(ops){
       const n = clamp(ui.numQ?.valueAsNumber || 4, 1, 16) | 0;
@@ -2310,25 +2634,14 @@ Readout 200us</pre>
         log(`Auto-load: matched hardware ion count to n=${n}`);
       }
 
-      const tab = new Stabilizer(n);
-      tab.reset();
-
-      // Apply toy unitary effects once (keeps demo fast)
       const progT = ops.reduce((s,o)=>s+o.dur,0);
-      for(const o of ops){
-        if(o.op === 'doppler' || o.op === 'opticalpump'){
-          lab.nbar = Math.max(0.02, lab.nbar - 0.20);
-        }else if(o.op === 'wait'){
-          applyDecoherence(tab.state, o.dur);
-        }else if(o.op === 'ms'){
-          tab.apply('ms');
-          applyDecoherence(tab.state, o.dur);
-        }else if(o.op === 'pi/2'){
-          tab.apply('pi/2');
-        }else if(o.op === 'pi' || o.op === 'x' || o.op === 'rabi'){
-          tab.apply('pi');
-        }
-      }
+      const T2ms = Math.max(0.1, ui.numT2?.valueAsNumber || 25);
+      const { p1, p2 } = effectiveGateErrorParams(progT);
+
+      // If there is a readout op, we stop there (readout ends experiment)
+      const lastRead = [...ops].map(o=>o.op).lastIndexOf('readout');
+      const unitaryOps = (lastRead >= 0) ? ops.slice(0, lastRead) : ops;
+      const readoutDur = (lastRead >= 0) ? ops[lastRead].dur : 0;
 
       const detT_us = ui.numDetT?.valueAsNumber || 200;
       const sensor = (ui.selSensor?.value || 'pmts').toLowerCase();
@@ -2340,8 +2653,100 @@ Readout 200us</pre>
       let totalErr = 0;
 
       for(let s=0; s<shots; s++){
-        const ideal = tab.measureAll().slice();
+        const sim = new TableauSim(n);
 
+        // Run program up to readout
+        for(const o of unitaryOps){
+          // time-based dephasing during any step that takes time
+          applyDephasing(sim, o.dur, T2ms, n);
+
+          const op = o.op;
+
+          if(op === 'doppler'){
+            // No internal (qubit) effect here; motion is tracked separately via n̄.
+            continue;
+          }
+          if(op === 'opticalpump' || op === 'reset'){
+            sim.resetAll();
+            continue;
+          }
+          if(op === 'wait' || op === 'idle' || op === 'barrier'){
+            continue;
+          }
+
+          // 1-qubit gates
+          if(op === 'pi/2' || op === 'h'){
+            const qs = resolve1QTargets(o, n);
+            for(const q of qs){
+              sim.h(q);
+              maybeApply1QDepol(sim, q, p1);
+            }
+            continue;
+          }
+          if(op === 's'){
+            const qs = resolve1QTargets(o, n);
+            for(const q of qs){
+              sim.s(q);
+              maybeApply1QDepol(sim, q, p1);
+            }
+            continue;
+          }
+          if(op === 'sdg'){
+            const qs = resolve1QTargets(o, n);
+            for(const q of qs){
+              sim.sdg(q);
+              maybeApply1QDepol(sim, q, p1);
+            }
+            continue;
+          }
+          if(op === 'pi' || op === 'x' || op === 'rabi'){
+            const qs = resolve1QTargets(o, n);
+            for(const q of qs){
+              sim.xGate(q);
+              maybeApply1QDepol(sim, q, p1);
+            }
+            continue;
+          }
+          if(op === 'z'){
+            const qs = resolve1QTargets(o, n);
+            for(const q of qs){
+              sim.zGate(q);
+              maybeApply1QDepol(sim, q, p1);
+            }
+            continue;
+          }
+
+          // 2-qubit gates
+          if(op === 'ms' || op === 'cnot'){
+            const pairs = resolve2QPairs(o, n);
+            for(const [c,t] of pairs){
+              sim.cnot(c,t);     // MS modeled as circuit-level entangler
+              maybeApply2QDepol(sim, c, t, p2);
+            }
+            continue;
+          }
+          if(op === 'cz'){
+            const pairs = resolve2QPairs(o, n);
+            for(const [a,b] of pairs){
+              sim.cz(a,b);
+              maybeApply2QDepol(sim, a, b, p2);
+            }
+            continue;
+          }
+
+          // unknown op: ignore (or you can throw)
+        }
+
+        // dephasing during readout window before measurement
+        applyDephasing(sim, readoutDur, T2ms, n);
+
+        // Ideal projective measurement in Z basis
+        const ideal = new Array(n);
+        for(let q=0;q<n;q++){
+          ideal[q] = sim.measureZ(q);
+        }
+
+        // Photon-count readout model
         const counts = new Array(n);
         for(let i=0;i<n;i++){
           counts[i] = sampleCounts(ideal[i], detT_us);
@@ -2597,15 +3002,15 @@ Readout 200us</pre>
       let t = 0;
 
       for(const o of ops){
-        const a = t/total;
-        const b = (t+o.dur)/total;
+        const a = (total>0) ? (t/total) : 0;
+        const b = (total>0) ? ((t+o.dur)/total) : 0;
         const xx0 = map(a,0,1,x0,x1);
         const xx1 = map(b,0,1,x0,x1);
 
         const op = o.op;
         const isRead = op === 'readout';
         const isCool = (op==='doppler' || op==='opticalpump');
-        const isGate = (op==='pi' || op==='pi/2' || op==='ms' || op==='rabi');
+        const isGate = ['pi','pi/2','ms','rabi','x','h','s','sdg','cnot','cz','z'].includes(op);
         const col = isRead ? 'rgba(123,221,255,.35)'
                   : isCool ? 'rgba(255,210,123,.22)'
                   : isGate ? 'rgba(47,227,154,.22)'
